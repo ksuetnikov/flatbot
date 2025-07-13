@@ -74,20 +74,20 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             ))}
                                         </div>
 
-                                        <div className="flex flex-col space-y-4">
-                                            {rightNavItems.map((item) => (
-                                                <a
-                                                    key={item.title}
-                                                    href={item.href}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex items-center space-x-2 font-medium"
-                                                >
-                                                    {item.icon && <Icon iconNode={item.icon} className="h-5 w-5" />}
-                                                    <span>{item.title}</span>
-                                                </a>
-                                            ))}
-                                        </div>
+                                        {/*<div className="flex flex-col space-y-4">*/}
+                                        {/*    {rightNavItems.map((item) => (*/}
+                                        {/*        <a*/}
+                                        {/*            key={item.title}*/}
+                                        {/*            href={item.href}*/}
+                                        {/*            target="_blank"*/}
+                                        {/*            rel="noopener noreferrer"*/}
+                                        {/*            className="flex items-center space-x-2 font-medium"*/}
+                                        {/*        >*/}
+                                        {/*            {item.icon && <Icon iconNode={item.icon} className="h-5 w-5" />}*/}
+                                        {/*            <span>{item.title}</span>*/}
+                                        {/*        </a>*/}
+                                        {/*    ))}*/}
+                                        {/*</div>*/}
                                     </div>
                                 </div>
                             </SheetContent>
