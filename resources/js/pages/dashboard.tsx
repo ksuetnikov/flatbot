@@ -1,7 +1,9 @@
 import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
+import { Button } from '@/components/ui/button';
+import { Trash2, Pencil } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -21,10 +23,20 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ objects }: DashboardProps) {
+    const handleDelete = (id: number) => {
+        if (confirm('Вы уверены, что хотите удалить этот объект?')) {
+            router.delete(route('object.destroy', id));
+        }
+    };
+
+    const showInfo = (id: number) => {
+        router.get(route('object.edit', id));
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 overflow-x-auto">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 {objects.length === 0 ? (
                     <div className="relative min-h-[100vh] flex-1 overflow-hidden rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border">
                         <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
@@ -34,16 +46,36 @@ export default function Dashboard({ objects }: DashboardProps) {
                         {objects.map((object) => (
                             <div
                                 key={object.id}
-                                className="p-4 border rounded-lg shadow-sm dark:border-sidebar-border"
+                                className="flex flex-col rounded-lg border p-4 shadow-sm dark:border-sidebar-border"
                             >
-                                <h3 className="font-medium">{object.name}</h3>
-                                {object.description && (
-                                    <p className="text-sm text-gray-500 mt-2">
-                                        {object.description}
-                                    </p>
-                                )}
-                                <div className="mt-4 text-xs text-gray-400">
-                                    Created: {new Date(object.created_at).toLocaleDateString()}
+                                <div className="flex-grow">
+                                    <h3 className="font-medium">{object.name}</h3>
+                                    {object.description && (
+                                        <p className="mt-2 text-sm text-gray-500">
+                                            {object.description}
+                                        </p>
+                                    )}
+                                    <div className="mt-4 text-xs text-gray-400">
+                                        Добавлено: {new Date(object.created_at).toLocaleDateString()}
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 flex justify-end space-x-2">
+                                    <Button
+                                        onClick={() => showInfo(object.id)}
+                                        className="inline-flex items-center bg-blue-500 hover:bg-blue-600 text-white"
+                                    >
+                                        <Pencil className="mr-1.5 h-4 w-4" />
+                                        Редактировать
+                                    </Button>
+                                    <Button
+                                        variant="destructive"
+                                        onClick={() => handleDelete(object.id)}
+                                        className="inline-flex items-center"
+                                    >
+                                        <Trash2 className="mr-1.5 h-4 w-4" />
+                                        Удалить
+                                    </Button>
                                 </div>
                             </div>
                         ))}

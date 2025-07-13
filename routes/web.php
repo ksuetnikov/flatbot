@@ -10,8 +10,8 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    // Dashboard route
     Route::get('dashboard', function () {
-        /** @var User $record */
         $user = Auth::user();
         $objects = $user->objects;
 
@@ -19,19 +19,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'objects' => $objects,
         ]);
     })->name('dashboard');
+
+    // Object routes
+    Route::get('/objects/{object}', [ObjectController::class, 'show'])->name('object.show');
+    Route::get('/objects/{object}/edit', [ObjectController::class, 'edit'])->name('object.edit');
+    Route::patch('/objects/{object}', [ObjectController::class, 'update'])->name('object.update');
+    Route::delete('/objects/{object}', [ObjectController::class, 'destroy'])->name('object.destroy');
 });
 
-// Route::middleware('auth:sanctum')->group(function () {
-//     Route::get('/objects', [ObjectController::class, 'index']);
-// });
-
-// Route::get('dashboard', function () {
-//     $objects = Auth::user()->objects; // предполагая, что есть отношение в модели User
-//
-//     return Inertia::render('Dashboard', [
-//         'objects' => $objects,
-//     ]);
-// })->middleware(['auth', 'verified']);
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
