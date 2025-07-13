@@ -6,9 +6,11 @@ namespace App\Http\Controllers\v1\Objects;
 
 use App\Http\Controllers\Controller;
 use App\Models\Object\ObjectModel;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Inertia\Response;
 
 /**
  * @author Kirill Suetnikov
@@ -26,20 +28,27 @@ class ObjectController extends Controller
         ]);
     }
 
-    // Форма редактирования
-    public function edit(ObjectModel $object)
+    /** Форма редактирования
+     *
+     * @param ObjectModel $object
+     *
+     * @return Response
+     */
+    public function edit(ObjectModel $object): Response
     {
         // $this->authorize('update', $object); // Проверка прав доступа
         \Log::info('object edit');
         \Log::info($object);
 
-        return Inertia::render('object/edit', [
+        return Inertia::render(
+            component: 'object/edit',
+            props:[
             'object' => $object
         ]);
     }
 
     // Обновление объекта
-    public function update(Request $request, ObjectModel $object)
+    public function update(Request $request, ObjectModel $object): RedirectResponse
     {
         // $this->authorize('update', $object);
 
@@ -51,7 +60,7 @@ class ObjectController extends Controller
 
         $object->update($validated);
 
-        return redirect()->route('object.show', $object)
+        return redirect()->route('dashboard')
             ->with('success', 'Объект успешно обновлен');
     }
 

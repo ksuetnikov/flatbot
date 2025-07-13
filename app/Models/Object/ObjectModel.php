@@ -34,6 +34,10 @@ class ObjectModel extends Model
     /** @var string */
     public $table = 'objects';
 
+    protected $fillable =[
+        'name'
+    ];
+
     /**
      * Пользователь, создавший данный объект
      */

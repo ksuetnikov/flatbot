@@ -1,5 +1,5 @@
 import AppLayout from '@/layouts/app-layout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 
 interface EditObjectProps {
@@ -20,7 +20,7 @@ export default function EditObject({ object }: EditObjectProps) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        put(route('objects.edit', object.id));
+        put(route('object.update', object.id));
     };
 
     return (
@@ -64,12 +64,12 @@ export default function EditObject({ object }: EditObjectProps) {
                             <Button type="submit" disabled={processing}>
                                 Сохранить
                             </Button>
-                            <a
-                                href={route('objects.show', object.id)}
+                            <Link
+                                href={route('dashboard')}
                                 className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
                             >
                                 Отмена
-                            </a>
+                            </Link>
                         </div>
                     </form>
                 </div>

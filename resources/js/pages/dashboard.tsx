@@ -30,7 +30,7 @@ export default function Dashboard({ objects }: DashboardProps) {
     };
 
     const showInfo = (id: number) => {
-        router.get(route('object.edit', id));
+        router.get(route('object.editWithInformation', id));
     };
 
     return (

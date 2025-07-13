@@ -22,8 +22,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Object routes
     Route::get('/objects/{object}', [ObjectController::class, 'show'])->name('object.show');
-    Route::get('/objects/{object}/edit', [ObjectController::class, 'edit'])->name('object.edit');
-    Route::patch('/objects/{object}', [ObjectController::class, 'update'])->name('object.update');
+    Route::get('/objects/{object}/edit', [ObjectController::class, 'edit'])->name('object.editWithInformation');
+    Route::put('/objects/{object}', [ObjectController::class, 'update'])->name('object.update');
     Route::delete('/objects/{object}', [ObjectController::class, 'destroy'])->name('object.destroy');
 });
 
