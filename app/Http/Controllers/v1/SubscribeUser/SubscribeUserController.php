@@ -23,17 +23,19 @@ class SubscribeUserController extends Controller
         private readonly SubscribeUserService $subscribeUserService
     ) {}
 
+    /**
+     * @param Request $request
+     * @param ObjectModel $object
+     *
+     * @return RedirectResponse
+     */
     public function create(Request $request, ObjectModel $object): RedirectResponse
     {
         // $this->authorize('update', $object);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
         ]);
-        // $a = SubscribeUserDTO::fromRequest($validated);
-        \Log::info('validated:');
-        \Log::info($validated);
         $dto = SubscribeUserDTO::from($validated);
-        \Log::info($dto);
         $this
             ->subscribeUserService
             ->create(
@@ -46,17 +48,17 @@ class SubscribeUserController extends Controller
             ->with('success', 'Объект успешно обновлен');
     }
 
-    /** Удаление объекта
+    /** Удаление подписчика из объекта
      *
-     * @param ObjectModel $object
+     * @param int $subscriberId
      *
      * @return RedirectResponse
      */
-    public function destroy(ObjectModel $object): RedirectResponse
+    public function destroy(int $subscriberId): RedirectResponse
     {
         // $this->authorize('delete', $object);
 
-        $object->delete();
+        $this->subscribeUserService->delete($subscriberId);
 
         return redirect()->route('dashboard')
             ->with('success', 'Объект успешно удален');

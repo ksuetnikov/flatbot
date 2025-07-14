@@ -22,4 +22,14 @@ class SubscribeUserService
 
         return $subscribeUser;
     }
+
+    /**
+     * @param int $subscribeUserId
+     *
+     * @return void
+     */
+    public function delete(int $subscribeUserId): void
+    {
+         SubscribeUser::destroy($subscribeUserId);
+    }
 }

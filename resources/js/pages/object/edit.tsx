@@ -100,12 +100,40 @@ export default function EditObject(this: any, { object , allSubscribers = [] }: 
         }
     };
 
-    const handleSubscriberChange = (id: number) => {
-        setData('subscribers',
-            data.subscribers.includes(id)
-                ? data.subscribers.filter(subId => subId !== id) // удаляем если уже есть
-                : [...data.subscribers, id] // добавляем если нет
-        );
+    const handleSubscriberChange = async (id: number) => {
+
+        try {
+            const response = await axios.delete(
+                `api/objects/${object.id}/subscribers/${id}`
+            );
+
+            // Обновляем список подписчиков, если бэкенд возвращает нового подписчика
+            if (response.data?.data?.id) {
+                setData('subscribers', [...data.subscribers, response.data.data.id]);
+            }
+
+            setNewSubscriberName('');
+        } catch (error) {
+            console.error('Ошибка при добавлении подписчика:', error);
+
+            if (axios.isAxiosError(error)) {
+                // Обработка ошибок валидации Laravel
+                if (error.response?.status === 422) {
+                    setSubscriberError(error.response.data.errors.name[0]);
+                } else {
+                    setSubscriberError(error.response?.data?.message || 'Ошибка при добавлении подписчика');
+                }
+            } else {
+                setSubscriberError('Произошла неизвестная ошибка');
+            }
+        } finally {
+            setIsAddingSubscriber(false);
+        }
+        // setData('subscribers',
+        //     data.subscribers.includes(id)
+        //         ? data.subscribers.filter(subId => subId !== id) // удаляем если уже есть
+        //         : [...data.subscribers, id] // добавляем если нет
+        // );
     };
 
     return (
