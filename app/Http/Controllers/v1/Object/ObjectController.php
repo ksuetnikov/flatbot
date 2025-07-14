@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers\v1\Objects;
+namespace App\Http\Controllers\v1\Object;
 
 use App\Http\Controllers\Controller;
 use App\Models\Object\ObjectModel;

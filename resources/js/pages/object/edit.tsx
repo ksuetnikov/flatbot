@@ -1,8 +1,8 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
-import log from 'eslint-plugin-react/lib/util/log';
 import { useState } from 'react';
+import axios from 'axios';
 
 interface Subscriber {
     id: number;
@@ -38,13 +38,66 @@ export default function EditObject(this: any, { object , allSubscribers = [] }: 
         put(route('object.update', object.id));
     };
 
+    // const addSubscriber = (e: React.FormEvent) => {
+    //     e.preventDefault();
+    //     console.log('Новый подписчик:', newSubscriberName);
+    //
+    //     // Здесь можно добавить логику для добавления подписчика
+    //     setNewSubscriberName(''); // Очищаем поле после добавления
+    // };
     const [newSubscriberName, setNewSubscriberName] = useState('');
+    const [isAddingSubscriber, setIsAddingSubscriber] = useState(false);
+    const [subscriberError, setSubscriberError] = useState<string | null>(null);
 
-    const addSubscriber = (e: React.FormEvent) => {
+    const addSubscriber = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('Новый подписчик:', newSubscriberName);
-        // Здесь можно добавить логику для добавления подписчика
-        setNewSubscriberName(''); // Очищаем поле после добавления
+
+        if (!newSubscriberName.trim()) return;
+
+        setIsAddingSubscriber(true);
+        setSubscriberError(null);
+
+        try {
+            // Формируем данные в формате, который ожидает DTO
+            const requestData = {
+                name: newSubscriberName
+            };
+
+            const response = await axios.post(
+                `/objects/${object.id}/subscribers`,
+                requestData,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                }
+            );
+
+            // Обновляем список подписчиков, если бэкенд возвращает нового подписчика
+            if (response.data?.data?.id) {
+                setData('subscribers', [...data.subscribers, response.data.data.id]);
+                // Если нужно обновить allSubscribers, можно добавить:
+                // setAllSubscribers([...allSubscribers, response.data.data]);
+            }
+
+            setNewSubscriberName('');
+        } catch (error) {
+            console.error('Ошибка при добавлении подписчика:', error);
+
+            if (axios.isAxiosError(error)) {
+                // Обработка ошибок валидации Laravel
+                if (error.response?.status === 422) {
+                    setSubscriberError(error.response.data.errors.name[0]);
+                } else {
+                    setSubscriberError(error.response?.data?.message || 'Ошибка при добавлении подписчика');
+                }
+            } else {
+                setSubscriberError('Произошла неизвестная ошибка');
+            }
+        } finally {
+            setIsAddingSubscriber(false);
+        }
     };
 
     const handleSubscriberChange = (id: number) => {

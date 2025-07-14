@@ -1,6 +1,7 @@
 <?php
 
-use App\Http\Controllers\v1\Objects\ObjectController;
+use App\Http\Controllers\v1\Object\ObjectController;
+use App\Http\Controllers\v1\SubscribeUser\SubscribeUserController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -25,6 +26,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/objects/{object}/edit', [ObjectController::class, 'show'])->name('object.editWithInformation');
     Route::put('/objects/{object}', [ObjectController::class, 'update'])->name('object.update');
     Route::delete('/objects/{object}', [ObjectController::class, 'destroy'])->name('object.destroy');
+
+    //Subscribers
+    Route::post('/objects/{object}/subscribers', [SubscribeUserController::class, 'create'])->name('subscriber.create');
 });
 
 
