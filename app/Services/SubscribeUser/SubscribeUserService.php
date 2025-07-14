@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Services\SubscribeUser;
+namespace App\Services\SubscribeUser;
 
 use App\DTO\SubscribeUser\SubscribeUserDTO;
 use App\Models\SubscribeUser\SubscribeUser;

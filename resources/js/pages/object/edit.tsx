@@ -46,6 +46,7 @@ export default function EditObject(this: any, { object , allSubscribers = [] }: 
     //     setNewSubscriberName(''); // Очищаем поле после добавления
     // };
     const [newSubscriberName, setNewSubscriberName] = useState('');
+    const [localAllSubscribers, setLocalAllSubscribers] = useState<Subscriber[]>(allSubscribers);
     const [isAddingSubscriber, setIsAddingSubscriber] = useState(false);
     const [subscriberError, setSubscriberError] = useState<string | null>(null);
 
@@ -78,8 +79,8 @@ export default function EditObject(this: any, { object , allSubscribers = [] }: 
             // Обновляем список подписчиков, если бэкенд возвращает нового подписчика
             if (response.data?.data?.id) {
                 setData('subscribers', [...data.subscribers, response.data.data.id]);
-                // Если нужно обновить allSubscribers, можно добавить:
-                // setAllSubscribers([...allSubscribers, response.data.data]);
+                // Обновляем локальное состояние подписчиков
+                setLocalAllSubscribers([...localAllSubscribers, response.data.data]);
             }
 
             setNewSubscriberName('');
@@ -117,8 +118,9 @@ export default function EditObject(this: any, { object , allSubscribers = [] }: 
 
             // Обновляем список подписчиков, если бэкенд возвращает нового подписчика
             if (response.status == 204) {
-
-                setData('subscribers', [...data.subscribers, id]);
+                setData('subscribers', data.subscribers.filter(subId => subId !== id));
+                // Удаляем подписчика из общего списка (если нужно)
+                setLocalAllSubscribers(localAllSubscribers.filter(sub => sub.id !== id));
             }
 
             setNewSubscriberName('');
@@ -197,7 +199,7 @@ export default function EditObject(this: any, { object , allSubscribers = [] }: 
                                 Подписчики
                             </label>
                             <div className="mt-1 space-y-2">
-                                {allSubscribers.map(subscriber => (
+                                {localAllSubscribers.map(subscriber => (
                                     <div key={subscriber.id} className="flex items-center">
                                         <input
                                             type="checkbox"

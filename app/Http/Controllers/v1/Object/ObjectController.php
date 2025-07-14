@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\v1\Object;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Object\ObjectCreateResource;
 use App\Models\Object\ObjectModel;
+use App\Services\Object\ObjectService;
+use Auth;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -17,6 +19,10 @@ use Inertia\Response;
  */
 class ObjectController extends Controller
 {
+    public function __construct(
+        private readonly ObjectService $objectService
+    ) {}
+
     /** Форма редактирования
      *
      * @param ObjectModel $object
@@ -35,6 +41,19 @@ class ObjectController extends Controller
             'object' => $object,
             'allSubscribers' => $object->subscribers,
         ]);
+    }
+
+    /** Создание объекта
+     *
+     * @return ObjectCreateResource
+     */
+    public function create()
+    {
+        $user = Auth::getUser();
+        $object = $this->objectService->create($user);
+        return redirect()->route('dashboard')
+            ->with('success', 'Объект успешно обновлен');
+        return ObjectCreateResource::make($object);
     }
 
     /** Само редактирование

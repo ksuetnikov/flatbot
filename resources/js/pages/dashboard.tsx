@@ -3,7 +3,7 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
-import { Trash2, Pencil } from 'lucide-react';
+import { Trash2, Pencil, CirclePlus } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -32,6 +32,10 @@ export default function Dashboard({ objects }: DashboardProps) {
 
     const showInfo = (id: number) => {
         router.get(route('object.editWithInformation', id));
+    };
+
+    const createObject = () => {
+        router.post(route('object.create'));
     };
 
     return (
@@ -82,6 +86,16 @@ export default function Dashboard({ objects }: DashboardProps) {
                         ))}
                     </div>
                 )}
+                <div>
+                    <Button
+                        onClick={() => createObject()}
+                        className="items-center bg-blue-500 hover:bg-blue-600 text-white"
+                    >
+                        <CirclePlus className="mr-1.5 h-4 w-4" />
+                        Добавить
+                    </Button>
+                </div>
+
             </div>
         </AppLayout>
     );

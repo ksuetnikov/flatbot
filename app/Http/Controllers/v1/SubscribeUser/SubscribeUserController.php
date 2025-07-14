@@ -7,8 +7,8 @@ namespace App\Http\Controllers\v1\SubscribeUser;
 use App\DTO\SubscribeUser\SubscribeUserDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\SubscribeUser\SubscribeUserGetResource;
-use App\Http\Services\SubscribeUser\SubscribeUserService;
 use App\Models\Object\ObjectModel;
+use App\Services\SubscribeUser\SubscribeUserService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 

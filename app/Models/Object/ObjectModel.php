@@ -39,6 +39,10 @@ use Illuminate\Support\Carbon;
 class ObjectModel extends Model
 {
     use HasFactory;
+
+    /** @var string */
+    public const DEFAULT_NAME = 'Новый объект';
+
     /** @var string */
     public $table = 'objects';
 

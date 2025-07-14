@@ -22,7 +22,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
     // Object routes
-    Route::get('/objects/{object}', [ObjectController::class, 'show'])->name('object.show');
+    // Route::get('/objects/{object}', [ObjectController::class, 'show'])->name('object.show');
+    Route::post('/objects', [ObjectController::class, 'create'])->name('object.create');
     Route::get('/objects/{object}/edit', [ObjectController::class, 'show'])->name('object.editWithInformation');
     Route::put('/objects/{object}', [ObjectController::class, 'update'])->name('object.update');
     Route::delete('/objects/{object}', [ObjectController::class, 'destroy'])->name('object.destroy');
