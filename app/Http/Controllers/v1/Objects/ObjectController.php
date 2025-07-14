@@ -28,11 +28,12 @@ class ObjectController extends Controller
         // $this->authorize('update', $object); // Проверка прав доступа
         \Log::info('object edit');
         \Log::info($object);
-
+        $object->load('subscribers');
         return Inertia::render(
             component: 'object/edit',
             props:[
-            'object' => $object
+            'object' => $object,
+            'allSubscribers' => $object->subscribers,
         ]);
     }
 

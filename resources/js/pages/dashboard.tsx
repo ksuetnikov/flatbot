@@ -7,7 +7,7 @@ import { Trash2, Pencil } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Объекты',
         href: '/dashboard',
     },
 ];
@@ -17,6 +17,7 @@ interface DashboardProps {
         id: number;
         name: string;
         description?: string;
+        notification_date?: string;
         created_at: string;
         updated_at: string;
     }>;
@@ -35,7 +36,7 @@ export default function Dashboard({ objects }: DashboardProps) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Dashboard" />
+            <Head title="Объекты" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 {objects.length === 0 ? (
                     <div className="relative min-h-[100vh] flex-1 overflow-hidden rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border">
