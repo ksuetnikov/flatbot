@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\v1\SubscribeUser;
 
+use App\DTO\SubscribeUser\SubscribeUserDTO;
 use App\Http\Controllers\Controller;
-use App\Http\DTO\SubscribeUser\SubscribeUserDTO;
+use App\Http\Resources\SubscribeUser\SubscribeUserGetResource;
 use App\Http\Services\SubscribeUser\SubscribeUserService;
 use App\Models\Object\ObjectModel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Inertia\Inertia;
-use Inertia\Response;
 
 /**
  * @author Kirill Suetnikov
@@ -29,14 +27,14 @@ class SubscribeUserController extends Controller
      *
      * @return RedirectResponse
      */
-    public function create(Request $request, ObjectModel $object): RedirectResponse
+    public function create(Request $request, ObjectModel $object)
     {
         // $this->authorize('update', $object);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
         ]);
         $dto = SubscribeUserDTO::from($validated);
-        $this
+        $subscribeUser = $this
             ->subscribeUserService
             ->create(
             objectId: $object->getKey(),
@@ -44,6 +42,7 @@ class SubscribeUserController extends Controller
         );
         // $object->update($validated);
 
+        return SubscribeUserGetResource::make($subscribeUser);
         return redirect()->route('dashboard')
             ->with('success', 'Объект успешно обновлен');
     }

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\DTO;
+namespace App\DTO;
 
 use Spatie\LaravelData\Data;
 

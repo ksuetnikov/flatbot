@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Http\DTO\SubscribeUser;
+namespace App\DTO\SubscribeUser;
 
-use App\Http\DTO\BaseDTO;
+use App\DTO\BaseDTO;
 
 /**
  * @author Kirill Suetnikov

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Services\SubscribeUser;
 
-use App\Http\DTO\SubscribeUser\SubscribeUserDTO;
+use App\DTO\SubscribeUser\SubscribeUserDTO;
 use App\Models\SubscribeUser\SubscribeUser;
 
 /**

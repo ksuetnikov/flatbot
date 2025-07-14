@@ -73,7 +73,8 @@ export default function EditObject(this: any, { object , allSubscribers = [] }: 
                     },
                 }
             );
-
+            console.log('response is:')
+            console.log(response.data?.data?.id)
             // Обновляем список подписчиков, если бэкенд возвращает нового подписчика
             if (response.data?.data?.id) {
                 setData('subscribers', [...data.subscribers, response.data.data.id]);
