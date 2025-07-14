@@ -50,17 +50,17 @@ class SubscribeUserController extends Controller
 
     /** Удаление подписчика из объекта
      *
+     * @param ObjectModel $object
      * @param int $subscriberId
      *
-     * @return RedirectResponse
+     * @return \Illuminate\Http\Response
      */
-    public function destroy(int $subscriberId): RedirectResponse
+    public function destroy(ObjectModel $object, int $subscriberId)
     {
         // $this->authorize('delete', $object);
-
+        \Log::info('destroy subscribers');
         $this->subscribeUserService->delete($subscriberId);
 
-        return redirect()->route('dashboard')
-            ->with('success', 'Объект успешно удален');
+        return response()->noContent();
     }
 }

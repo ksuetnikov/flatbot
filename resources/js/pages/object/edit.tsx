@@ -101,15 +101,23 @@ export default function EditObject(this: any, { object , allSubscribers = [] }: 
     };
 
     const handleSubscriberChange = async (id: number) => {
+            const response = await axios.delete(
+                `/objects/${object.id}/subscribers/${id}`
+            );
+        if (response.data?.data?.id) {
+            setData('subscribers', [...data.subscribers, response.data.data.id]);
+            console.log('deleted')
+        }
 
         try {
             const response = await axios.delete(
-                `api/objects/${object.id}/subscribers/${id}`
+                `/objects/${object.id}/subscribers/${id}`
             );
 
             // Обновляем список подписчиков, если бэкенд возвращает нового подписчика
-            if (response.data?.data?.id) {
-                setData('subscribers', [...data.subscribers, response.data.data.id]);
+            if (response.status == 204) {
+
+                setData('subscribers', [...data.subscribers, id]);
             }
 
             setNewSubscriberName('');
@@ -129,11 +137,7 @@ export default function EditObject(this: any, { object , allSubscribers = [] }: 
         } finally {
             setIsAddingSubscriber(false);
         }
-        // setData('subscribers',
-        //     data.subscribers.includes(id)
-        //         ? data.subscribers.filter(subId => subId !== id) // удаляем если уже есть
-        //         : [...data.subscribers, id] // добавляем если нет
-        // );
+
     };
 
     return (
