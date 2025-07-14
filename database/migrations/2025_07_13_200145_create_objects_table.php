@@ -34,6 +34,10 @@ return new class extends Migration {
                 ->cascadeOnDelete();
             $table->decimal('order', 30, 10);
             $table
+                ->timestamp('notification_date')
+                ->nullable()
+                ->comment('Временная метка уведомления пользователя');
+            $table
                 ->timestamp('created_at')
                 ->nullable()
                 ->comment('Временная метка создания записи');

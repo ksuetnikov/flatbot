@@ -17,24 +17,13 @@ use Inertia\Response;
  */
 class ObjectController extends Controller
 {
-    // Просмотр объекта
-    public function show(ObjectModel $object)
-    {
-        // $this->authorize('view', $object); // Проверка прав доступа
-
-        return Inertia::render('object/show', [
-            'object' => $object,
-            'canEdit' => true // или ваша логика проверки прав
-        ]);
-    }
-
     /** Форма редактирования
      *
      * @param ObjectModel $object
      *
      * @return Response
      */
-    public function edit(ObjectModel $object): Response
+    public function show(ObjectModel $object): Response
     {
         // $this->authorize('update', $object); // Проверка прав доступа
         \Log::info('object edit');
@@ -47,7 +36,14 @@ class ObjectController extends Controller
         ]);
     }
 
-    // Обновление объекта
+    /** Само редактирование
+     *
+     * @param Request $request
+     * @param ObjectModel $object
+     *
+     * @return RedirectResponse
+     */
+
     public function update(Request $request, ObjectModel $object): RedirectResponse
     {
         // $this->authorize('update', $object);
@@ -64,8 +60,13 @@ class ObjectController extends Controller
             ->with('success', 'Объект успешно обновлен');
     }
 
-    // Удаление объекта
-    public function destroy(ObjectModel $object)
+    /** Удаление объекта
+     *
+     * @param ObjectModel $object
+     *
+     * @return RedirectResponse
+     */
+    public function destroy(ObjectModel $object): RedirectResponse
     {
         // $this->authorize('delete', $object);
 
