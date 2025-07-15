@@ -13,7 +13,7 @@ interface Subscriber {
 interface ObjectProperty {
     id: number;
     name: string;
-    code?: string;
+    code: string;
     description: string;
 }
 
@@ -152,60 +152,7 @@ export default function EditObject(this: any, { object , allSubscribers = [], al
 
     };
 
-    const addProperty = async (e: React.FormEvent) => {
-        e.preventDefault();
-        console.log('создаем свойство')
-        if (!newPropertyName.trim()) return;
-
-        setIsAddingProperty(true);
-        setPropertyError(null);
-
-        try {
-            // Формируем данные в формате, который ожидает DTO
-            const requestData = {
-                name: newPropertyName
-            };
-
-            const response = await axios.post(
-                `/objects/${object.id}/properties`,
-                requestData,
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    },
-                }
-            );
-            console.log('response is:')
-            console.log(response.data?.data?.id)
-            // Обновляем список подписчиков, если бэкенд возвращает нового подписчика
-            if (response.data?.data?.id) {
-                setData('objectProperties', [...data.objectProperties, response.data.data.id]);
-                // Обновляем локальное состояние подписчиков
-                setLocalAllProperties([...localAllProperties, response.data.data]);
-            }
-
-            setNewPropertyName('');
-        } catch (error) {
-            console.error('Ошибка при добавлении свойства:', error);
-
-            if (axios.isAxiosError(error)) {
-                // Обработка ошибок валидации Laravel
-                if (error.response?.status === 422) {
-                    setPropertyError(error.response.data.errors.name[0]);
-                } else {
-                    setPropertyError(error.response?.data?.message || 'Ошибка при добавлении свойства');
-                }
-            } else {
-                setPropertyError('Произошла неизвестная ошибка');
-            }
-        } finally {
-            setIsAddingProperty(false);
-        }
-    };
-
     const handlePropertyChange = async (id: number) => {
-
         try {
             const response = await axios.delete(
                 `/objects/${object.id}/properties/${id}`
@@ -236,6 +183,57 @@ export default function EditObject(this: any, { object , allSubscribers = [], al
             setIsAddingProperty(false);
         }
 
+    };
+
+    const [newPropertyCode, setNewPropertyCode] = useState(''); // Добавляем состояние для кода
+
+    const addProperty = async (e: React.FormEvent) => {
+        e.preventDefault();
+        console.log('создаем свойство')
+        if (!newPropertyName.trim() || !newPropertyCode.trim()) return; // Проверяем оба поля
+
+        setIsAddingProperty(true);
+        setPropertyError(null);
+
+        try {
+            // Формируем данные с name и code
+            const requestData = {
+                name: newPropertyName,
+                code: newPropertyCode
+            };
+
+            const response = await axios.post(
+                `/objects/${object.id}/properties`,
+                requestData,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                }
+            );
+
+            if (response.data?.data?.id) {
+                setData('objectProperties', [...data.objectProperties, response.data.data.id]);
+                setLocalAllProperties([...localAllProperties, response.data.data]);
+            }
+
+            setNewPropertyName('');
+            setNewPropertyCode(''); // Очищаем поле кода после успешного добавления
+        } catch (error) {
+            console.error('Ошибка при добавлении свойства:', error);
+            if (axios.isAxiosError(error)) {
+                if (error.response?.status === 422) {
+                    setPropertyError(error.response.data.message || 'Ошибка валидации');
+                } else {
+                    setPropertyError(error.response?.data?.message || 'Ошибка при добавлении свойства');
+                }
+            } else {
+                setPropertyError('Произошла неизвестная ошибка');
+            }
+        } finally {
+            setIsAddingProperty(false);
+        }
     };
 
     return (
@@ -326,6 +324,7 @@ export default function EditObject(this: any, { object , allSubscribers = [], al
                                             addSubscriber(e);
                                         }
                                     }}
+                                    placeholder="Имя подписчика"
                                     className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                 />
                             </div>
@@ -351,13 +350,12 @@ export default function EditObject(this: any, { object , allSubscribers = [], al
                                             checked={data.objectProperties.includes(property.id)}
                                             onChange={() => handlePropertyChange(property.id)}
                                             className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                            placeholder="Введите название свойства"
                                         />
                                         <label
                                             htmlFor={`subscriber-${property.id}`}
                                             className="ml-2 block text-sm text-gray-900"
                                         >
-                                            {property.name}
+                                            {property.name} ({property.code})
                                         </label>
                                     </div>
                                 ))}
@@ -365,23 +363,29 @@ export default function EditObject(this: any, { object , allSubscribers = [], al
                             {errors.objectProperties && <p className="mt-2 text-sm text-red-600">{errors.objectProperties}</p>}
                         </div>
                         <div className="flex space-x-4">
-                            <div>
+                            <div className="flex-1">
                                 <input
                                     id="new_property"
                                     type="text"
                                     value={newPropertyName}
                                     onChange={(e) => setNewPropertyName(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            addProperty(e);
-                                        }
-                                    }}
+                                    placeholder="Название свойства"
+                                    className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <input
+                                    id="new_property_code"
+                                    type="text"
+                                    value={newPropertyCode}
+                                    onChange={(e) => setNewPropertyCode(e.target.value)}
+                                    placeholder="Код свойства"
                                     className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                 />
                             </div>
                             <Button
                                 onClick={addProperty}
-                                disabled={processing || !newPropertyName.trim()}
+                                disabled={processing || !newPropertyName.trim() || !newPropertyCode.trim()}
                             >
                                 Добавить
                             </Button>
