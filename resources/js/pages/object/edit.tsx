@@ -10,25 +10,37 @@ interface Subscriber {
     description: string;
 }
 
+interface ObjectProperty {
+    id: number;
+    name: string;
+    code?: string;
+    description: string;
+}
+
 interface EditObjectProps {
     object: {
         id: number;
         name: string;
         subscribers: Subscriber[];
+        properties: ObjectProperty[];
         notification_date: string;
         description?: string;
     };
     allSubscribers?: Subscriber[];
+    allProperties?: ObjectProperty[];
 }
 
 // Редактирование объекта
-export default function EditObject(this: any, { object , allSubscribers = [] }: EditObjectProps) {
+export default function EditObject(this: any, { object , allSubscribers = [], allProperties = [] }: EditObjectProps) {
     console.log('Страница редактирования объекта');
     console.log('Subscribers:');
     console.log(allSubscribers)
+    console.log('Properties:');
+    console.log(allProperties)
     const { data, setData, put, processing, errors } = useForm({
         name: object.name,
         subscribers: object.subscribers.map(s => s.id),
+        objectProperties: object.properties.map(op => op.id),
         notification_date: object.notification_date || '',
         description: object.description || '',
     });
@@ -38,18 +50,15 @@ export default function EditObject(this: any, { object , allSubscribers = [] }: 
         put(route('object.update', object.id));
     };
 
-    // const addSubscriber = (e: React.FormEvent) => {
-    //     e.preventDefault();
-    //     console.log('Новый подписчик:', newSubscriberName);
-    //
-    //     // Здесь можно добавить логику для добавления подписчика
-    //     setNewSubscriberName(''); // Очищаем поле после добавления
-    // };
     const [newSubscriberName, setNewSubscriberName] = useState('');
     const [localAllSubscribers, setLocalAllSubscribers] = useState<Subscriber[]>(allSubscribers);
     const [isAddingSubscriber, setIsAddingSubscriber] = useState(false);
     const [subscriberError, setSubscriberError] = useState<string | null>(null);
 
+    const [localAllProperties, setLocalAllProperties] = useState<ObjectProperty[]>(allProperties);
+    const [newPropertyName, setNewPropertyName] = useState('');
+    const [isAddingProperty, setIsAddingProperty] = useState(false);
+    const [propertyError, setPropertyError] = useState<string | null>(null);
     const addSubscriber = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -139,6 +148,92 @@ export default function EditObject(this: any, { object , allSubscribers = [] }: 
             }
         } finally {
             setIsAddingSubscriber(false);
+        }
+
+    };
+
+    const addProperty = async (e: React.FormEvent) => {
+        e.preventDefault();
+        console.log('создаем свойство')
+        if (!newPropertyName.trim()) return;
+
+        setIsAddingProperty(true);
+        setPropertyError(null);
+
+        try {
+            // Формируем данные в формате, который ожидает DTO
+            const requestData = {
+                name: newPropertyName
+            };
+
+            const response = await axios.post(
+                `/objects/${object.id}/properties`,
+                requestData,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                }
+            );
+            console.log('response is:')
+            console.log(response.data?.data?.id)
+            // Обновляем список подписчиков, если бэкенд возвращает нового подписчика
+            if (response.data?.data?.id) {
+                setData('objectProperties', [...data.objectProperties, response.data.data.id]);
+                // Обновляем локальное состояние подписчиков
+                setLocalAllProperties([...localAllProperties, response.data.data]);
+            }
+
+            setNewPropertyName('');
+        } catch (error) {
+            console.error('Ошибка при добавлении свойства:', error);
+
+            if (axios.isAxiosError(error)) {
+                // Обработка ошибок валидации Laravel
+                if (error.response?.status === 422) {
+                    setPropertyError(error.response.data.errors.name[0]);
+                } else {
+                    setPropertyError(error.response?.data?.message || 'Ошибка при добавлении свойства');
+                }
+            } else {
+                setPropertyError('Произошла неизвестная ошибка');
+            }
+        } finally {
+            setIsAddingProperty(false);
+        }
+    };
+
+    const handlePropertyChange = async (id: number) => {
+
+        try {
+            const response = await axios.delete(
+                `/objects/${object.id}/properties/${id}`
+            );
+
+            // Обновляем список подписчиков, если бэкенд возвращает нового подписчика
+            if (response.status == 204) {
+                setData('objectProperties', data.objectProperties.filter(subId => subId !== id));
+                // Удаляем подписчика из общего списка (если нужно)
+                setLocalAllProperties(localAllProperties.filter(prop => prop.id !== id));
+            }
+
+            setNewPropertyName('');
+        } catch (error) {
+            console.error('Ошибка при добавлении свойства:', error);
+
+            if (axios.isAxiosError(error)) {
+                // Обработка ошибок валидации Laravel
+                if (error.response?.status === 422) {
+                    setPropertyError(error.response.data.errors.name[0]);
+                } else {
+                    setPropertyError(error.response?.data?.message || 'Ошибка при добавлении свойства');
+                }
+            } else {
+                setPropertyError('Произошла неизвестная ошибка');
+            }
+        } finally {
+            setIsAddingProperty(false);
         }
 
     };
@@ -237,6 +332,56 @@ export default function EditObject(this: any, { object , allSubscribers = [] }: 
                             <Button
                                 onClick={addSubscriber}
                                 disabled={processing || !newSubscriberName.trim()}
+                            >
+                                Добавить
+                            </Button>
+                        </div>
+
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                                Свойства
+                            </label>
+                            <div className="mt-1 space-y-2">
+                                {localAllProperties.map(property => (
+                                    <div key={property.id} className="flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            id={`object-property-${property.id}`}
+                                            checked={data.objectProperties.includes(property.id)}
+                                            onChange={() => handlePropertyChange(property.id)}
+                                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            placeholder="Введите название свойства"
+                                        />
+                                        <label
+                                            htmlFor={`subscriber-${property.id}`}
+                                            className="ml-2 block text-sm text-gray-900"
+                                        >
+                                            {property.name}
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                            {errors.objectProperties && <p className="mt-2 text-sm text-red-600">{errors.objectProperties}</p>}
+                        </div>
+                        <div className="flex space-x-4">
+                            <div>
+                                <input
+                                    id="new_property"
+                                    type="text"
+                                    value={newPropertyName}
+                                    onChange={(e) => setNewPropertyName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            addProperty(e);
+                                        }
+                                    }}
+                                    className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                />
+                            </div>
+                            <Button
+                                onClick={addProperty}
+                                disabled={processing || !newPropertyName.trim()}
                             >
                                 Добавить
                             </Button>

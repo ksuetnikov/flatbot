@@ -32,6 +32,7 @@ use Illuminate\Support\Carbon;
  *
  * @method static Builder|self query()
  * @property-read Collection<SubscribeUser> $subscribers Подписчики
+ * @property-read Collection<ObjectProperty> $properties Свойства
  * @property-read User $user Пользователь
  *
  * @mixin Eloquent
@@ -64,5 +65,13 @@ class ObjectModel extends Model
     public function subscribers(): HasMany
     {
         return $this->hasMany(SubscribeUser::class,'object_id', 'id');
+    }
+
+    /**
+     * Свойства объекта
+     */
+    public function properties(): HasMany
+    {
+        return $this->hasMany(ObjectProperty::class,'object_id', 'id');
     }
 }

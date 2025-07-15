@@ -34,26 +34,28 @@ class ObjectController extends Controller
         // $this->authorize('update', $object); // Проверка прав доступа
         \Log::info('object edit');
         \Log::info($object);
-        $object->load('subscribers');
+        $object->load(['subscribers', 'properties']);
         return Inertia::render(
             component: 'object/edit',
             props:[
             'object' => $object,
             'allSubscribers' => $object->subscribers,
+            'allProperties' => $object->properties,
         ]);
     }
 
     /** Создание объекта
      *
-     * @return ObjectCreateResource
+     * @return RedirectResponse
      */
-    public function create()
+    public function create(): RedirectResponse
     {
         $user = Auth::getUser();
-        $object = $this->objectService->create($user);
+        $object = $this
+            ->objectService
+            ->create($user);
         return redirect()->route('dashboard')
             ->with('success', 'Объект успешно обновлен');
-        return ObjectCreateResource::make($object);
     }
 
     /** Само редактирование

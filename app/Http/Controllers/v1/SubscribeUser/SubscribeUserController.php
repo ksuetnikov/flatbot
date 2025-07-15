@@ -40,11 +40,7 @@ class SubscribeUserController extends Controller
             objectId: $object->getKey(),
             dto: $dto
         );
-        // $object->update($validated);
-
         return SubscribeUserGetResource::make($subscribeUser);
-        return redirect()->route('dashboard')
-            ->with('success', 'Объект успешно обновлен');
     }
 
     /** Удаление подписчика из объекта
