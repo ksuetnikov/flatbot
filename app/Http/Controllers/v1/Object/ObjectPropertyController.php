@@ -55,15 +55,17 @@ class ObjectPropertyController extends Controller
     /** Удаление подписчика из объекта
      *
      * @param ObjectModel $object
-     * @param int $subscriberId
+     * @param int $propertyId
      *
      * @return Response
      */
-    public function destroy(ObjectModel $object, int $subscriberId): Response
+    public function destroy(ObjectModel $object, int $propertyId): Response
     {
+        \Log::info('Удаляется свойство для объекта с айди:');
+        \Log::info($propertyId);
         $this
             ->objectPropertyService
-            ->delete($subscriberId);
+            ->delete($propertyId);
 
         return response()->noContent();
     }

@@ -33,6 +33,6 @@ class ObjectPropertyService
      */
     public function delete(int $subscribeUserId): void
     {
-         SubscribeUser::destroy($subscribeUserId);
+         ObjectProperty::destroy($subscribeUserId);
     }
 }

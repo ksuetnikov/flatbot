@@ -307,6 +307,10 @@ export default function EditObject(this: any, { object , allSubscribers = [], al
                                         >
                                             {subscriber.name}
                                         </label>
+                                       <div className="ml-1 space-y-2">
+                                           <p>Уникальный код: <i>{subscriber.id}</i></p>
+
+                                       </div>
                                     </div>
                                 ))}
                             </div>
