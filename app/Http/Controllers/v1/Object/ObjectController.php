@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\v1\Object;
 
+use App\DTO\Object\AfterUpdateObjectDTO;
+use App\Events\Object\AfterUpdateObjectEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Object\ObjectCreateResource;
 use App\Models\Object\ObjectModel;
@@ -54,6 +56,10 @@ class ObjectController extends Controller
         $object = $this
             ->objectService
             ->create($user);
+        $eventDigestStructureDto = AfterUpdateObjectDTO::from([
+            'objectId' => $object->getKey(),
+        ]);
+        AfterUpdateObjectEvent::dispatch($eventDigestStructureDto);
         return redirect()->route('dashboard')
             ->with('success', 'Объект успешно обновлен');
     }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\v1\Object;
 
-use App\DTO\ObjectProperty\ObjectPropertyDTO;
+use App\DTO\Object\ObjectPropertyDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Object\ObjectPropertyGetResource;
 use App\Models\Object\ObjectModel;

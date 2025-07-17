@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Object;
 
-use App\DTO\ObjectProperty\ObjectPropertyDTO;
+use App\DTO\Object\ObjectPropertyDTO;
 use App\DTO\SubscribeUser\SubscribeUserDTO;
 use App\Models\Object\ObjectProperty;
 use App\Models\SubscribeUser\SubscribeUser;
