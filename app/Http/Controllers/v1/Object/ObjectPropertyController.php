@@ -5,15 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers\v1\Object;
 
 use App\DTO\ObjectProperty\ObjectPropertyDTO;
-use App\DTO\SubscribeUser\SubscribeUserDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Object\ObjectPropertyGetResource;
-use App\Http\Resources\SubscribeUser\SubscribeUserGetResource;
 use App\Models\Object\ObjectModel;
-use App\Models\Object\ObjectProperty;
 use App\Services\Object\ObjectPropertyService;
-use App\Services\SubscribeUser\SubscribeUserService;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -47,7 +42,6 @@ class ObjectPropertyController extends Controller
             objectId: $object->getKey(),
             dto: $dto
         );
-        // $object->update($validated);
 
         return ObjectPropertyGetResource::make($subscribeUser);
     }
