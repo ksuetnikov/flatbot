@@ -7,12 +7,11 @@ namespace App\Http\Controllers\v1\Object;
 use App\DTO\Object\AfterUpdateObjectDTO;
 use App\Events\Object\AfterUpdateObjectEvent;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\Object\ObjectCreateResource;
+use App\Http\Requests\Object\UpdateObjectRequest;
 use App\Models\Object\ObjectModel;
 use App\Services\Object\ObjectService;
 use Auth;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -23,7 +22,8 @@ class ObjectController extends Controller
 {
     public function __construct(
         private readonly ObjectService $objectService
-    ) {}
+    ) {
+    }
 
     /** Форма редактирования
      *
@@ -37,13 +37,15 @@ class ObjectController extends Controller
         \Log::info('object edit');
         \Log::info($object);
         $object->load(['subscribers', 'properties']);
+
         return Inertia::render(
             component: 'object/edit',
             props:[
-            'object' => $object,
-            'allSubscribers' => $object->subscribers,
-            'allProperties' => $object->properties,
-        ]);
+                'object' => $object,
+                'allSubscribers' => $object->subscribers,
+                'allProperties' => $object->properties,
+            ]
+        );
     }
 
     /** Создание объекта
@@ -60,28 +62,24 @@ class ObjectController extends Controller
             'objectId' => $object->getKey(),
         ]);
         AfterUpdateObjectEvent::dispatch($eventDigestStructureDto);
+
         return redirect()->route('dashboard')
             ->with('success', 'Объект успешно обновлен');
     }
 
     /** Само редактирование
      *
-     * @param Request $request
+     * @param UpdateObjectRequest $request
      * @param ObjectModel $object
      *
      * @return RedirectResponse
      */
 
-    public function update(Request $request, ObjectModel $object): RedirectResponse
+    public function update(UpdateObjectRequest $request, ObjectModel $object): RedirectResponse
     {
         // $this->authorize('update', $object);
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            // другие поля
-        ]);
-
+        $validated = $request->validated();
         $object->update($validated);
         $eventDigestStructureDto = AfterUpdateObjectDTO::from([
             'objectId' => $object->getKey(),

@@ -6,10 +6,10 @@ namespace App\Http\Controllers\v1\Object;
 
 use App\DTO\Object\ObjectPropertyDTO;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Object\CreateObjectPropertyRequest;
 use App\Http\Resources\Object\ObjectPropertyGetResource;
 use App\Models\Object\ObjectModel;
 use App\Services\Object\ObjectPropertyService;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 /**
@@ -19,29 +19,30 @@ class ObjectPropertyController extends Controller
 {
     public function __construct(
         private readonly ObjectPropertyService $objectPropertyService,
-    ) {}
+    ) {
+    }
 
-    /**
-     * @param Request $request
+    /** Создание свойства объекта
+     *
+     * @param CreateObjectPropertyRequest $request
      * @param ObjectModel $object
      *
      * @return ObjectPropertyGetResource
      */
-    public function create(Request $request, ObjectModel $object): ObjectPropertyGetResource
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'sometimes|string|max:255',
-        ]);
+    public function create(
+        CreateObjectPropertyRequest $request,
+        ObjectModel $object
+    ): ObjectPropertyGetResource {
+        $validated = $request->validated();
         \Log::info('Создается свойство для объекта с айди:');
         \Log::info($object->getKey());
         $dto = ObjectPropertyDTO::from($validated);
         $subscribeUser = $this
             ->objectPropertyService
             ->create(
-            objectId: $object->getKey(),
-            dto: $dto
-        );
+                objectId: $object->getKey(),
+                dto: $dto
+            );
 
         return ObjectPropertyGetResource::make($subscribeUser);
     }

@@ -19,7 +19,8 @@ class SubscribeUserController extends Controller
 {
     public function __construct(
         private readonly SubscribeUserService $subscribeUserService
-    ) {}
+    ) {
+    }
 
     /**
      * @param Request $request
@@ -37,9 +38,10 @@ class SubscribeUserController extends Controller
         $subscribeUser = $this
             ->subscribeUserService
             ->create(
-            objectId: $object->getKey(),
-            dto: $dto
-        );
+                objectId: $object->getKey(),
+                dto: $dto
+            );
+
         return SubscribeUserGetResource::make($subscribeUser);
     }
 

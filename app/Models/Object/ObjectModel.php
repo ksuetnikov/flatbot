@@ -47,8 +47,9 @@ class ObjectModel extends Model
     /** @var string */
     public $table = 'objects';
 
-    protected $fillable =[
-        'name'
+    protected $fillable = [
+        'name',
+        'description',
     ];
 
     /**
@@ -56,7 +57,7 @@ class ObjectModel extends Model
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class,'user_id', 'id');
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
     /**
@@ -64,7 +65,7 @@ class ObjectModel extends Model
      */
     public function subscribers(): HasMany
     {
-        return $this->hasMany(SubscribeUser::class,'object_id', 'id');
+        return $this->hasMany(SubscribeUser::class, 'object_id', 'id');
     }
 
     /**
@@ -72,6 +73,6 @@ class ObjectModel extends Model
      */
     public function properties(): HasMany
     {
-        return $this->hasMany(ObjectProperty::class,'object_id', 'id');
+        return $this->hasMany(ObjectProperty::class, 'object_id', 'id');
     }
 }

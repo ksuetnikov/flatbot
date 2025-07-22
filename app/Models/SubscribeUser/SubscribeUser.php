@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Models\SubscribeUser;
 
 use App\Models\Object\ObjectModel;
-use App\Models\User;
 use Eloquent;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -37,7 +36,7 @@ class SubscribeUser extends Model
     /** @var string */
     public $table = 'subscribe_users';
 
-    protected $fillable =[
+    protected $fillable = [
         'name'
     ];
 
@@ -46,6 +45,6 @@ class SubscribeUser extends Model
      */
     public function object(): BelongsTo
     {
-        return $this->belongsTo(ObjectModel::class,'object_id', 'id');
+        return $this->belongsTo(ObjectModel::class, 'object_id', 'id');
     }
 }

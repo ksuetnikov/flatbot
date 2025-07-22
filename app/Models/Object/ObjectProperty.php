@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models\Object;
 
-use App\Models\Object\ObjectModel;
-use App\Models\User;
 use Eloquent;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -39,7 +37,7 @@ class ObjectProperty extends Model
     /** @var string */
     public $table = 'object_properties';
 
-    protected $fillable =[
+    protected $fillable = [
         'name'
     ];
 
@@ -48,6 +46,6 @@ class ObjectProperty extends Model
      */
     public function object(): BelongsTo
     {
-        return $this->belongsTo(ObjectModel::class,'object_id', 'id');
+        return $this->belongsTo(ObjectModel::class, 'object_id', 'id');
     }
 }

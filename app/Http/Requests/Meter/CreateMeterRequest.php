@@ -3,10 +3,6 @@
 namespace App\Http\Requests\Meter;
 
 use App\Http\Requests\BaseRequest;
-use App\Models\User;
-use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class CreateMeterRequest extends BaseRequest
 {

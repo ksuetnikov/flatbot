@@ -4,7 +4,6 @@ namespace App\Http\Resources\Object;
 
 use App\Http\Resources\BaseResource;
 use App\Models\Object\ObjectProperty;
-use App\Models\SubscribeUser\SubscribeUser;
 use Illuminate\Http\Request;
 
 /**
