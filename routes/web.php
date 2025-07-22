@@ -33,6 +33,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/objects/{object}/subscribers', [SubscribeUserController::class, 'create'])->name('subscriber.create');
     Route::delete('/objects/{object}/subscribers/{subscriberId}', [SubscribeUserController::class, 'destroy'])->name('subscriber.destroy');
 
+    //Object properties
     Route::post('/objects/{object}/properties', [ObjectPropertyController::class, 'create'])->name('property.create');
     Route::delete('/objects/{object}/properties/{propertyId}', [ObjectPropertyController::class, 'destroy'])->name('property.destroy');
 
