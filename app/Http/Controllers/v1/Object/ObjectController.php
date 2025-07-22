@@ -83,6 +83,10 @@ class ObjectController extends Controller
         ]);
 
         $object->update($validated);
+        $eventDigestStructureDto = AfterUpdateObjectDTO::from([
+            'objectId' => $object->getKey(),
+        ]);
+        AfterUpdateObjectEvent::dispatch($eventDigestStructureDto);
 
         return redirect()->route('dashboard')
             ->with('success', 'Объект успешно обновлен');

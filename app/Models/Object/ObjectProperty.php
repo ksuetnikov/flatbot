@@ -22,6 +22,7 @@ use Illuminate\Support\Carbon;
  * @property int $object_id Идентификатор свойства
  * @property string $name Наименование свойства
  * @property null|string $code Код свойства
+ * @property null|string $value Значение свойства
  * @property null|string $description Описание свойства
  * @property null|Carbon $created_at Дата создания
  * @property null|Carbon $updated_at Дата обновления

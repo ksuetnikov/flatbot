@@ -13,6 +13,7 @@ interface Subscriber {
 interface ObjectProperty {
     id: number;
     name: string;
+    value: string;
     code: string;
     description: string;
 }
@@ -343,7 +344,7 @@ export default function EditObject(this: any, { object , allSubscribers = [], al
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700">
-                                Свойства
+                                Показания
                             </label>
                             <div className="mt-1 space-y-2">
                                 {localAllProperties.map(property => (
@@ -361,6 +362,14 @@ export default function EditObject(this: any, { object , allSubscribers = [], al
                                         >
                                             {property.name} ({property.code})
                                         </label>
+
+                                        {property.value && (
+                                            <div
+                                            className="ml-2 space-y-2"
+                                        >
+                                            <p>   Показания: {property.value}</p>
+                                        </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
