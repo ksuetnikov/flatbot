@@ -6,8 +6,11 @@ namespace App\Models\Object;
 
 use Eloquent;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -29,6 +32,8 @@ use Illuminate\Support\Carbon;
  * @method static Builder|self query()
  *
  * @property-read ObjectModel $object Объект
+ * @property-read Collection<PropertyReading> $readings История показаний
+ * @property-read null|PropertyReading $latestReading Последнее показание
  *
  * @mixin Eloquent
  */
@@ -50,5 +55,17 @@ class ObjectProperty extends Model
     public function object(): BelongsTo
     {
         return $this->belongsTo(ObjectModel::class, 'object_id', 'id');
+    }
+
+    public function readings(): HasMany
+    {
+        return $this->hasMany(PropertyReading::class, 'object_property_id', 'id')
+            ->orderByDesc('recorded_at');
+    }
+
+    public function latestReading(): HasOne
+    {
+        return $this->hasOne(PropertyReading::class, 'object_property_id', 'id')
+            ->latestOfMany('recorded_at');
     }
 }

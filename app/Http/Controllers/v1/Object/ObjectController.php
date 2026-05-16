@@ -23,27 +23,46 @@ class ObjectController extends Controller
     ) {
     }
 
-    /** Форма редактирования
-     *
-     * @param ObjectModel $object
-     *
-     * @return Response
-     */
+    /** Обзор объекта: счётчики и последние показания */
     public function show(ObjectModel $object): Response
     {
-        // $this->authorize('update', $object); // Проверка прав доступа
-        \Log::info('object edit');
-        \Log::info($object);
+        $object->load([
+            'subscribers',
+            'properties.latestReading',
+        ]);
+
+        return Inertia::render('object/show', [
+            'object' => [
+                'id' => $object->id,
+                'name' => $object->name,
+                'description' => $object->description,
+                'notification_date' => $object->notification_date,
+                'created_at' => $object->created_at,
+                'subscribers' => $object->subscribers,
+                'properties' => $object->properties->map(static fn ($property) => [
+                    'id' => $property->id,
+                    'name' => $property->name,
+                    'code' => $property->code,
+                    'description' => $property->description,
+                    'latest_reading' => $property->latestReading ? [
+                        'value' => $property->latestReading->value,
+                        'recorded_at' => $property->latestReading->recorded_at,
+                    ] : null,
+                ]),
+            ],
+        ]);
+    }
+
+    /** Настройки объекта (подписчики, счётчики) */
+    public function edit(ObjectModel $object): Response
+    {
         $object->load(['subscribers', 'properties']);
 
-        return Inertia::render(
-            component: 'object/edit',
-            props:[
-                'object' => $object,
-                'allSubscribers' => $object->subscribers,
-                'allProperties' => $object->properties,
-            ]
-        );
+        return Inertia::render('object/edit', [
+            'object' => $object,
+            'allSubscribers' => $object->subscribers,
+            'allProperties' => $object->properties,
+        ]);
     }
 
     /** Создание объекта
@@ -53,9 +72,9 @@ class ObjectController extends Controller
     public function create(): RedirectResponse
     {
         $user = Auth::getUser();
-        $this->objectService->create($user);
+        $object = $this->objectService->create($user);
 
-        return redirect()->route('dashboard')
+        return redirect()->route('object.show', $object)
             ->with('success', 'Объект успешно создан');
     }
 
@@ -73,7 +92,7 @@ class ObjectController extends Controller
 
         $object->update($request->validated());
 
-        return redirect()->route('dashboard')
+        return redirect()->route('object.show', $object)
             ->with('success', 'Объект успешно обновлен');
     }
 

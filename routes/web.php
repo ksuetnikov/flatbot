@@ -23,9 +23,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
     // Object routes
-    // Route::get('/objects/{object}', [ObjectController::class, 'show'])->name('object.show');
     Route::post('/objects', [ObjectController::class, 'create'])->name('object.create');
-    Route::get('/objects/{object}/edit', [ObjectController::class, 'show'])->name('object.editWithInformation');
+    Route::get('/objects/{object}', [ObjectController::class, 'show'])->name('object.show');
+    Route::get('/objects/{object}/edit', [ObjectController::class, 'edit'])->name('object.edit');
     Route::put('/objects/{object}', [ObjectController::class, 'update'])->name('object.update');
     Route::delete('/objects/{object}', [ObjectController::class, 'destroy'])->name('object.destroy');
 
@@ -35,6 +35,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/objects/{object}/subscribers/{subscriberId}', [SubscribeUserController::class, 'destroy'])->name('subscriber.destroy');
 
     //Object properties
+    Route::get('/objects/{object}/properties/{propertyId}', [ObjectPropertyController::class, 'show'])->name('property.show');
     Route::post('/objects/{object}/properties', [ObjectPropertyController::class, 'create'])->name('property.create');
     Route::put('/objects/{object}/properties/{propertyId}', [ObjectPropertyController::class, 'update'])->name('property.update');
     Route::delete('/objects/{object}/properties/{propertyId}', [ObjectPropertyController::class, 'destroy'])->name('property.destroy');

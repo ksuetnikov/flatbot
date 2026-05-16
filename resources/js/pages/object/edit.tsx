@@ -236,7 +236,15 @@ export default function EditObject({ object, allSubscribers = [], allProperties 
 
             <div className="py-6">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <h1 className="text-2xl font-bold text-gray-900">Редактирование объекта</h1>
+                    <div className="mb-6">
+                        <Link
+                            href={route('object.show', object.id)}
+                            className="text-sm text-muted-foreground hover:text-foreground"
+                        >
+                            ← К объекту
+                        </Link>
+                        <h1 className="mt-1 text-2xl font-bold text-gray-900">Настройки объекта</h1>
+                    </div>
 
                     <form onSubmit={handleSubmit} className="mt-6 space-y-6">
                         <div>

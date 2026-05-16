@@ -13,6 +13,8 @@ use App\Http\Resources\Object\ObjectPropertyGetResource;
 use App\Models\Object\ObjectModel;
 use App\Services\Object\ObjectPropertyService;
 use Illuminate\Http\Response;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 /**
  * @author Kirill Suetnikov
@@ -47,6 +49,33 @@ class ObjectPropertyController extends Controller
             );
 
         return ObjectPropertyGetResource::make($subscribeUser);
+    }
+
+    /** История показаний счётчика */
+    public function show(ObjectModel $object, int $propertyId): InertiaResponse
+    {
+        $property = ObjectProperty::query()
+            ->where('object_id', $object->getKey())
+            ->with('readings')
+            ->findOrFail($propertyId);
+
+        return Inertia::render('object/property-readings', [
+            'object' => [
+                'id' => $object->id,
+                'name' => $object->name,
+            ],
+            'property' => [
+                'id' => $property->id,
+                'name' => $property->name,
+                'code' => $property->code,
+                'description' => $property->description,
+                'readings' => $property->readings->map(static fn ($reading) => [
+                    'id' => $reading->id,
+                    'value' => $reading->value,
+                    'recorded_at' => $reading->recorded_at,
+                ]),
+            ],
+        ]);
     }
 
     public function update(
