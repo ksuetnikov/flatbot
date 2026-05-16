@@ -39,6 +39,10 @@ readonly class ObjectUpdateEventSubscriber
      */
     public function handleUpdatingDigestStructure(AfterUpdateObjectEvent $event): void
     {
+        if (!config('services.go_api.object_post_url')) {
+            return;
+        }
+
         $this
             ->jobObjectUpdateService
             ->runUpdateObjectJob($event->eventDto);

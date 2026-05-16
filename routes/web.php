@@ -31,10 +31,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     //Subscribers
     Route::post('/objects/{object}/subscribers', [SubscribeUserController::class, 'create'])->name('subscriber.create');
+    Route::put('/objects/{object}/subscribers/{subscriberId}', [SubscribeUserController::class, 'update'])->name('subscriber.update');
     Route::delete('/objects/{object}/subscribers/{subscriberId}', [SubscribeUserController::class, 'destroy'])->name('subscriber.destroy');
 
     //Object properties
     Route::post('/objects/{object}/properties', [ObjectPropertyController::class, 'create'])->name('property.create');
+    Route::put('/objects/{object}/properties/{propertyId}', [ObjectPropertyController::class, 'update'])->name('property.update');
     Route::delete('/objects/{object}/properties/{propertyId}', [ObjectPropertyController::class, 'destroy'])->name('property.destroy');
 
 });

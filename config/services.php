@@ -13,6 +13,8 @@ return [
     | a conventional file to locate the various service credentials.
     |
     */
+    // Устаревшая синхронизация в Go через HTTP (создавала дубликаты в общей SQLite).
+    // Оставлено для совместимости; не задавайте GO_API_OBJECT_POST_URL при общей БД с ботом.
     'go_api' => [
         'object_post_url' => env('GO_API_OBJECT_POST_URL'),
     ],

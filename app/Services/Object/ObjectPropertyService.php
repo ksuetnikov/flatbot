@@ -26,6 +26,15 @@ class ObjectPropertyService
         return $objectProperty;
     }
 
+    public function update(ObjectProperty $objectProperty, ObjectPropertyDTO $dto): ObjectProperty
+    {
+        $objectProperty->name = $dto->name;
+        $objectProperty->code = $dto->code;
+        $objectProperty->save();
+
+        return $objectProperty;
+    }
+
     /**
      * @param int $subscribeUserId
      *

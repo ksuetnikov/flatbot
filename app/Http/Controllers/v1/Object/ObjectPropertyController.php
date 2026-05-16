@@ -7,6 +7,8 @@ namespace App\Http\Controllers\v1\Object;
 use App\DTO\Object\ObjectPropertyDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Object\CreateObjectPropertyRequest;
+use App\Http\Requests\Object\UpdateObjectPropertyRequest;
+use App\Models\Object\ObjectProperty;
 use App\Http\Resources\Object\ObjectPropertyGetResource;
 use App\Models\Object\ObjectModel;
 use App\Services\Object\ObjectPropertyService;
@@ -47,7 +49,22 @@ class ObjectPropertyController extends Controller
         return ObjectPropertyGetResource::make($subscribeUser);
     }
 
-    /** Удаление подписчика из объекта
+    public function update(
+        UpdateObjectPropertyRequest $request,
+        ObjectModel $object,
+        int $propertyId,
+    ): ObjectPropertyGetResource {
+        $property = ObjectProperty::query()
+            ->where('object_id', $object->getKey())
+            ->findOrFail($propertyId);
+
+        $dto = ObjectPropertyDTO::from($request->validated());
+        $property = $this->objectPropertyService->update($property, $dto);
+
+        return ObjectPropertyGetResource::make($property);
+    }
+
+    /** Удаление свойства объекта
      *
      * @param ObjectModel $object
      * @param int $propertyId

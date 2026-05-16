@@ -7,15 +7,15 @@ import axios from 'axios';
 interface Subscriber {
     id: number;
     name: string;
-    description: string;
+    description?: string;
 }
 
 interface ObjectProperty {
     id: number;
     name: string;
-    value: string;
+    value?: string;
     code: string;
-    description: string;
+    description?: string;
 }
 
 interface EditObjectProps {
@@ -31,211 +31,204 @@ interface EditObjectProps {
     allProperties?: ObjectProperty[];
 }
 
-// Редактирование объекта
-export default function EditObject(this: any, { object , allSubscribers = [], allProperties = [] }: EditObjectProps) {
-    console.log('Страница редактирования объекта');
-    console.log('Subscribers:');
-    console.log(allSubscribers)
-    console.log('Properties:');
-    console.log(allProperties)
+const jsonHeaders = {
+    headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+    },
+};
+
+const counterInputClass =
+    'min-w-[200px] flex-1 rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500';
+const counterCodeClass =
+    'min-w-[160px] flex-1 rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500';
+
+export default function EditObject({ object, allSubscribers = [], allProperties = [] }: EditObjectProps) {
     const { data, setData, put, processing, errors } = useForm({
         name: object.name,
-        subscribers: object.subscribers.map(s => s.id),
-        objectProperties: object.properties.map(op => op.id),
         notification_date: object.notification_date || '',
         description: object.description || '',
     });
+
+    const [subscribers, setSubscribers] = useState<Subscriber[]>(allSubscribers);
+    const [properties, setProperties] = useState<ObjectProperty[]>(allProperties);
+
+    const [newSubscriberName, setNewSubscriberName] = useState('');
+    const [isAddingSubscriber, setIsAddingSubscriber] = useState(false);
+    const [subscriberError, setSubscriberError] = useState<string | null>(null);
+    const [savingSubscriberId, setSavingSubscriberId] = useState<number | null>(null);
+
+    const [newPropertyName, setNewPropertyName] = useState('');
+    const [newPropertyCode, setNewPropertyCode] = useState('');
+    const [isAddingProperty, setIsAddingProperty] = useState(false);
+    const [propertyError, setPropertyError] = useState<string | null>(null);
+    const [savingPropertyId, setSavingPropertyId] = useState<number | null>(null);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         put(route('object.update', object.id));
     };
 
-    const [newSubscriberName, setNewSubscriberName] = useState('');
-    const [localAllSubscribers, setLocalAllSubscribers] = useState<Subscriber[]>(allSubscribers);
-    const [isAddingSubscriber, setIsAddingSubscriber] = useState(false);
-    const [subscriberError, setSubscriberError] = useState<string | null>(null);
-
-    const [localAllProperties, setLocalAllProperties] = useState<ObjectProperty[]>(allProperties);
-    const [newPropertyName, setNewPropertyName] = useState('');
-    const [isAddingProperty, setIsAddingProperty] = useState(false);
-    const [propertyError, setPropertyError] = useState<string | null>(null);
     const addSubscriber = async (e: React.FormEvent) => {
         e.preventDefault();
-
         if (!newSubscriberName.trim()) return;
 
         setIsAddingSubscriber(true);
         setSubscriberError(null);
 
         try {
-            // Формируем данные в формате, который ожидает DTO
-            const requestData = {
-                name: newSubscriberName
-            };
-
             const response = await axios.post(
                 `/objects/${object.id}/subscribers`,
-                requestData,
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    },
-                }
+                { name: newSubscriberName },
+                jsonHeaders,
             );
-            console.log('response is:')
-            console.log(response.data?.data?.id)
-            // Обновляем список подписчиков, если бэкенд возвращает нового подписчика
-            if (response.data?.data?.id) {
-                setData('subscribers', [...data.subscribers, response.data.data.id]);
-                // Обновляем локальное состояние подписчиков
-                setLocalAllSubscribers([...localAllSubscribers, response.data.data]);
-            }
 
+            if (response.data?.data) {
+                setSubscribers([...subscribers, response.data.data]);
+            }
             setNewSubscriberName('');
         } catch (error) {
-            console.error('Ошибка при добавлении подписчика:', error);
-
-            if (axios.isAxiosError(error)) {
-                // Обработка ошибок валидации Laravel
-                if (error.response?.status === 422) {
-                    setSubscriberError(error.response.data.errors.name[0]);
-                } else {
-                    setSubscriberError(error.response?.data?.message || 'Ошибка при добавлении подписчика');
-                }
+            if (axios.isAxiosError(error) && error.response?.status === 422) {
+                setSubscriberError(error.response.data.errors?.name?.[0] || 'Ошибка валидации');
             } else {
-                setSubscriberError('Произошла неизвестная ошибка');
+                setSubscriberError('Ошибка при добавлении подписчика');
             }
         } finally {
             setIsAddingSubscriber(false);
         }
     };
 
-    const handleSubscriberChange = async (id: number) => {
-            const response = await axios.delete(
-                `/objects/${object.id}/subscribers/${id}`
-            );
-        if (response.data?.data?.id) {
-            setData('subscribers', [...data.subscribers, response.data.data.id]);
-            console.log('deleted')
-        }
+    const updateSubscriber = async (subscriber: Subscriber) => {
+        if (!subscriber.name.trim()) return;
+
+        setSavingSubscriberId(subscriber.id);
+        setSubscriberError(null);
 
         try {
-            const response = await axios.delete(
-                `/objects/${object.id}/subscribers/${id}`
+            const response = await axios.put(
+                `/objects/${object.id}/subscribers/${subscriber.id}`,
+                { name: subscriber.name },
+                jsonHeaders,
             );
 
-            // Обновляем список подписчиков, если бэкенд возвращает нового подписчика
-            if (response.status == 204) {
-                setData('subscribers', data.subscribers.filter(subId => subId !== id));
-                // Удаляем подписчика из общего списка (если нужно)
-                setLocalAllSubscribers(localAllSubscribers.filter(sub => sub.id !== id));
+            if (response.data?.data) {
+                setSubscribers(subscribers.map((s) => (s.id === subscriber.id ? response.data.data : s)));
             }
-
-            setNewSubscriberName('');
-        } catch (error) {
-            console.error('Ошибка при добавлении подписчика:', error);
-
-            if (axios.isAxiosError(error)) {
-                // Обработка ошибок валидации Laravel
-                if (error.response?.status === 422) {
-                    setSubscriberError(error.response.data.errors.name[0]);
-                } else {
-                    setSubscriberError(error.response?.data?.message || 'Ошибка при добавлении подписчика');
-                }
-            } else {
-                setSubscriberError('Произошла неизвестная ошибка');
-            }
+        } catch {
+            setSubscriberError('Ошибка при сохранении подписчика');
         } finally {
-            setIsAddingSubscriber(false);
+            setSavingSubscriberId(null);
         }
-
     };
 
-    const handlePropertyChange = async (id: number) => {
+    const deleteSubscriber = async (id: number) => {
         try {
-            const response = await axios.delete(
-                `/objects/${object.id}/properties/${id}`
-            );
-
-            // Обновляем список подписчиков, если бэкенд возвращает нового подписчика
-            if (response.status == 204) {
-                setData('objectProperties', data.objectProperties.filter(subId => subId !== id));
-                // Удаляем подписчика из общего списка (если нужно)
-                setLocalAllProperties(localAllProperties.filter(prop => prop.id !== id));
-            }
-
-            setNewPropertyName('');
-        } catch (error) {
-            console.error('Ошибка при добавлении свойства:', error);
-
-            if (axios.isAxiosError(error)) {
-                // Обработка ошибок валидации Laravel
-                if (error.response?.status === 422) {
-                    setPropertyError(error.response.data.errors.name[0]);
-                } else {
-                    setPropertyError(error.response?.data?.message || 'Ошибка при добавлении свойства');
-                }
-            } else {
-                setPropertyError('Произошла неизвестная ошибка');
-            }
-        } finally {
-            setIsAddingProperty(false);
+            await axios.delete(`/objects/${object.id}/subscribers/${id}`, jsonHeaders);
+            setSubscribers(subscribers.filter((s) => s.id !== id));
+        } catch {
+            setSubscriberError('Ошибка при удалении подписчика');
         }
-
     };
-
-    const [newPropertyCode, setNewPropertyCode] = useState(''); // Добавляем состояние для кода
 
     const addProperty = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('создаем свойство')
-        if (!newPropertyName.trim() || !newPropertyCode.trim()) return; // Проверяем оба поля
+        if (!newPropertyName.trim() || !newPropertyCode.trim()) return;
 
         setIsAddingProperty(true);
         setPropertyError(null);
 
         try {
-            // Формируем данные с name и code
-            const requestData = {
-                name: newPropertyName,
-                code: newPropertyCode
-            };
-
             const response = await axios.post(
                 `/objects/${object.id}/properties`,
-                requestData,
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    },
-                }
+                { name: newPropertyName, code: newPropertyCode },
+                jsonHeaders,
             );
 
-            if (response.data?.data?.id) {
-                setData('objectProperties', [...data.objectProperties, response.data.data.id]);
-                setLocalAllProperties([...localAllProperties, response.data.data]);
+            if (response.data?.data) {
+                setProperties([...properties, response.data.data]);
             }
-
             setNewPropertyName('');
-            setNewPropertyCode(''); // Очищаем поле кода после успешного добавления
+            setNewPropertyCode('');
         } catch (error) {
-            console.error('Ошибка при добавлении свойства:', error);
-            if (axios.isAxiosError(error)) {
-                if (error.response?.status === 422) {
-                    setPropertyError(error.response.data.message || 'Ошибка валидации');
-                } else {
-                    setPropertyError(error.response?.data?.message || 'Ошибка при добавлении свойства');
-                }
+            if (axios.isAxiosError(error) && error.response?.status === 422) {
+                setPropertyError(error.response.data.message || 'Ошибка валидации');
             } else {
-                setPropertyError('Произошла неизвестная ошибка');
+                setPropertyError('Ошибка при добавлении счётчика');
             }
         } finally {
             setIsAddingProperty(false);
         }
     };
+
+    const updateProperty = async (property: ObjectProperty) => {
+        if (!property.name.trim() || !property.code.trim()) return;
+
+        setSavingPropertyId(property.id);
+        setPropertyError(null);
+
+        try {
+            const response = await axios.put(
+                `/objects/${object.id}/properties/${property.id}`,
+                { name: property.name, code: property.code },
+                jsonHeaders,
+            );
+
+            if (response.data?.data) {
+                setProperties(properties.map((p) => (p.id === property.id ? response.data.data : p)));
+            }
+        } catch {
+            setPropertyError('Ошибка при сохранении счётчика');
+        } finally {
+            setSavingPropertyId(null);
+        }
+    };
+
+    const deleteProperty = async (id: number) => {
+        try {
+            await axios.delete(`/objects/${object.id}/properties/${id}`, jsonHeaders);
+            setProperties(properties.filter((p) => p.id !== id));
+        } catch {
+            setPropertyError('Ошибка при удалении счётчика');
+        }
+    };
+
+    const patchProperty = (id: number, field: 'name' | 'code', value: string) => {
+        setProperties(properties.map((p) => (p.id === id ? { ...p, [field]: value } : p)));
+    };
+
+    const patchSubscriber = (id: number, name: string) => {
+        setSubscribers(subscribers.map((s) => (s.id === id ? { ...s, name } : s)));
+    };
+
+    const renderCounterRow = (
+        name: string,
+        code: string,
+        onNameChange: (v: string) => void,
+        onCodeChange: (v: string) => void,
+        actions: React.ReactNode,
+        lastValue?: string,
+    ) => (
+        <div>
+            <div className="flex flex-wrap items-center gap-4">
+                <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => onNameChange(e.target.value)}
+                    placeholder="Название счётчика"
+                    className={counterInputClass}
+                />
+                <input
+                    type="text"
+                    value={code}
+                    onChange={(e) => onCodeChange(e.target.value)}
+                    placeholder="Код счётчика"
+                    className={counterCodeClass}
+                />
+                {actions}
+            </div>
+            {lastValue && <p className="mt-1 text-sm text-gray-500">Последнее показание: {lastValue}</p>}
+        </div>
+    );
 
     return (
         <AppLayout>
@@ -285,128 +278,118 @@ export default function EditObject(this: any, { object , allSubscribers = [], al
                                 onChange={(e) => setData('notification_date', e.target.value)}
                                 className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             />
-                            {errors.notification_date && <p className="mt-2 text-sm text-red-600">{errors.notification_date}</p>}
+                            {errors.notification_date && (
+                                <p className="mt-2 text-sm text-red-600">{errors.notification_date}</p>
+                            )}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Подписчики
-                            </label>
-                            <div className="mt-1 space-y-2">
-                                {localAllSubscribers.map(subscriber => (
-                                    <div key={subscriber.id} className="flex items-center">
+                            <label className="block text-sm font-medium text-gray-700">Подписчики</label>
+                            <div className="mt-2 space-y-3">
+                                {subscribers.map((subscriber) => (
+                                    <div
+                                        key={subscriber.id}
+                                        className="flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 p-3"
+                                    >
                                         <input
-                                            type="checkbox"
-                                            id={`subscriber-${subscriber.id}`}
-                                            checked={data.subscribers.includes(subscriber.id)}
-                                            onChange={() => handleSubscriberChange(subscriber.id)}
-                                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            type="text"
+                                            value={subscriber.name}
+                                            onChange={(e) => patchSubscriber(subscriber.id, e.target.value)}
+                                            className="min-w-[200px] flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
                                         />
-                                        <label
-                                            htmlFor={`subscriber-${subscriber.id}`}
-                                            className="ml-2 block text-sm text-gray-900"
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            disabled={savingSubscriberId === subscriber.id}
+                                            onClick={() => updateSubscriber(subscriber)}
                                         >
-                                            {subscriber.name}
-                                        </label>
-                                       <div className="ml-1 space-y-2">
-                                           <p>Уникальный код: <i>{subscriber.id}</i></p>
-
-                                       </div>
+                                            {savingSubscriberId === subscriber.id ? 'Сохранение…' : 'Сохранить'}
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="destructive"
+                                            onClick={() => deleteSubscriber(subscriber.id)}
+                                        >
+                                            Удалить
+                                        </Button>
                                     </div>
                                 ))}
                             </div>
-                            {errors.subscribers && <p className="mt-2 text-sm text-red-600">{errors.subscribers}</p>}
+                            {subscriberError && <p className="mt-2 text-sm text-red-600">{subscriberError}</p>}
                         </div>
+
                         <div className="flex space-x-4">
-                            <div>
-                                <input
-                                    id="new_subscriber"
-                                    type="text"
-                                    value={newSubscriberName}
-                                    onChange={(e) => setNewSubscriberName(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            addSubscriber(e);
-                                        }
-                                    }}
-                                    placeholder="Имя подписчика"
-                                    className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                />
-                            </div>
-                            <Button
-                                onClick={addSubscriber}
-                                disabled={processing || !newSubscriberName.trim()}
-                            >
+                            <input
+                                type="text"
+                                value={newSubscriberName}
+                                onChange={(e) => setNewSubscriberName(e.target.value)}
+                                placeholder="Имя нового подписчика"
+                                className="block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            />
+                            <Button type="button" onClick={addSubscriber} disabled={isAddingSubscriber || !newSubscriberName.trim()}>
                                 Добавить
                             </Button>
                         </div>
 
-
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Показания
-                            </label>
-                            <div className="mt-1 space-y-2">
-                                {localAllProperties.map(property => (
-                                    <div key={property.id} className="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            id={`object-property-${property.id}`}
-                                            checked={data.objectProperties.includes(property.id)}
-                                            onChange={() => handlePropertyChange(property.id)}
-                                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                        />
-                                        <label
-                                            htmlFor={`subscriber-${property.id}`}
-                                            className="ml-2 block text-sm text-gray-900"
-                                        >
-                                            {property.name} ({property.code})
-                                        </label>
+                            <label className="block text-sm font-medium text-gray-700">Счётчики (показания)</label>
 
-                                        {property.value && (
-                                            <div
-                                            className="ml-2 space-y-2"
-                                        >
-                                            <p>   Показания: {property.value}</p>
-                                        </div>
+                            <div className="mt-3 space-y-3">
+                                {properties.map((property) => (
+                                    <div key={property.id}>
+                                        {renderCounterRow(
+                                            property.name,
+                                            property.code,
+                                            (v) => patchProperty(property.id, 'name', v),
+                                            (v) => patchProperty(property.id, 'code', v),
+                                            <>
+                                                <Button
+                                                    type="button"
+                                                    disabled={savingPropertyId === property.id}
+                                                    onClick={() => updateProperty(property)}
+                                                >
+                                                    {savingPropertyId === property.id ? 'Сохранение…' : 'Сохранить'}
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    variant="destructive"
+                                                    onClick={() => deleteProperty(property.id)}
+                                                >
+                                                    Удалить
+                                                </Button>
+                                            </>,
+                                            property.value,
                                         )}
                                     </div>
                                 ))}
+
+                                <div className={properties.length > 0 ? 'border-t border-gray-200 pt-4' : ''}>
+                                    {renderCounterRow(
+                                        newPropertyName,
+                                        newPropertyCode,
+                                        setNewPropertyName,
+                                        setNewPropertyCode,
+                                        <Button
+                                            type="button"
+                                            onClick={addProperty}
+                                            disabled={isAddingProperty || !newPropertyName.trim() || !newPropertyCode.trim()}
+                                        >
+                                            Добавить счётчик
+                                        </Button>,
+                                    )}
+                                </div>
                             </div>
-                            {errors.objectProperties && <p className="mt-2 text-sm text-red-600">{errors.objectProperties}</p>}
-                        </div>
-                        <div className="flex space-x-4">
-                            <div className="flex-1">
-                                <input
-                                    id="new_property"
-                                    type="text"
-                                    value={newPropertyName}
-                                    onChange={(e) => setNewPropertyName(e.target.value)}
-                                    placeholder="Название свойства"
-                                    className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                />
-                            </div>
-                            <div className="flex-1">
-                                <input
-                                    id="new_property_code"
-                                    type="text"
-                                    value={newPropertyCode}
-                                    onChange={(e) => setNewPropertyCode(e.target.value)}
-                                    placeholder="Код свойства"
-                                    className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                />
-                            </div>
-                            <Button
-                                onClick={addProperty}
-                                disabled={processing || !newPropertyName.trim() || !newPropertyCode.trim()}
-                            >
-                                Добавить
-                            </Button>
+
+                            {properties.length === 0 && (
+                                <p className="mt-2 text-sm text-gray-500">Пока нет счётчиков — добавьте первый в строке ниже.</p>
+                            )}
+                            {propertyError && <p className="mt-2 text-sm text-red-600">{propertyError}</p>}
                         </div>
 
                         <div className="flex space-x-4">
                             <Button type="submit" disabled={processing}>
-                                Сохранить
+                                Сохранить объект
                             </Button>
                             <Link
                                 href={route('dashboard')}

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\v1\Object;
 
-use App\DTO\Object\AfterUpdateObjectDTO;
-use App\Events\Object\AfterUpdateObjectEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Object\UpdateObjectRequest;
 use App\Models\Object\ObjectModel;
@@ -55,16 +53,10 @@ class ObjectController extends Controller
     public function create(): RedirectResponse
     {
         $user = Auth::getUser();
-        $object = $this
-            ->objectService
-            ->create($user);
-        $eventDigestStructureDto = AfterUpdateObjectDTO::from([
-            'objectId' => $object->getKey(),
-        ]);
-        AfterUpdateObjectEvent::dispatch($eventDigestStructureDto);
+        $this->objectService->create($user);
 
         return redirect()->route('dashboard')
-            ->with('success', 'Объект успешно обновлен');
+            ->with('success', 'Объект успешно создан');
     }
 
     /** Само редактирование
@@ -79,12 +71,7 @@ class ObjectController extends Controller
     {
         // $this->authorize('update', $object);
 
-        $validated = $request->validated();
-        $object->update($validated);
-        $eventDigestStructureDto = AfterUpdateObjectDTO::from([
-            'objectId' => $object->getKey(),
-        ]);
-        AfterUpdateObjectEvent::dispatch($eventDigestStructureDto);
+        $object->update($request->validated());
 
         return redirect()->route('dashboard')
             ->with('success', 'Объект успешно обновлен');

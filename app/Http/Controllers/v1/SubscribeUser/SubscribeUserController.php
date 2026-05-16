@@ -6,8 +6,10 @@ namespace App\Http\Controllers\v1\SubscribeUser;
 
 use App\DTO\SubscribeUser\SubscribeUserDTO;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SubscribeUser\UpdateSubscribeUserRequest;
 use App\Http\Resources\SubscribeUser\SubscribeUserGetResource;
 use App\Models\Object\ObjectModel;
+use App\Models\SubscribeUser\SubscribeUser;
 use App\Services\SubscribeUser\SubscribeUserService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -43,6 +45,21 @@ class SubscribeUserController extends Controller
             );
 
         return SubscribeUserGetResource::make($subscribeUser);
+    }
+
+    public function update(
+        UpdateSubscribeUserRequest $request,
+        ObjectModel $object,
+        int $subscriberId,
+    ): SubscribeUserGetResource {
+        $subscriber = SubscribeUser::query()
+            ->where('object_id', $object->getKey())
+            ->findOrFail($subscriberId);
+
+        $dto = SubscribeUserDTO::from($request->validated());
+        $subscriber = $this->subscribeUserService->update($subscriber, $dto);
+
+        return SubscribeUserGetResource::make($subscriber);
     }
 
     /** Удаление подписчика из объекта

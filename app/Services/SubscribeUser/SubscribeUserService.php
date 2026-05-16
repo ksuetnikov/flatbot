@@ -23,6 +23,14 @@ class SubscribeUserService
         return $subscribeUser;
     }
 
+    public function update(SubscribeUser $subscribeUser, SubscribeUserDTO $dto): SubscribeUser
+    {
+        $subscribeUser->name = $dto->name;
+        $subscribeUser->save();
+
+        return $subscribeUser;
+    }
+
     /**
      * @param int $subscribeUserId
      *

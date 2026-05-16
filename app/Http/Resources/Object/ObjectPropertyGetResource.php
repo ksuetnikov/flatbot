@@ -22,8 +22,8 @@ class ObjectPropertyGetResource extends BaseResource
         return [
             'id' => $this->getKey(),
             'name' => $this->name,
-            'value' => $this->value,
             'code' => $this->code,
+            'value' => $this->value,
             'order' => $this->order,
             'createdAt' => $this->created_at,
         ];

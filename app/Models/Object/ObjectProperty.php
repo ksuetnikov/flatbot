@@ -38,7 +38,10 @@ class ObjectProperty extends Model
     public $table = 'object_properties';
 
     protected $fillable = [
-        'name'
+        'name',
+        'code',
+        'description',
+        'value',
     ];
 
     /**
