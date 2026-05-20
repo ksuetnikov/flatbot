@@ -11,9 +11,11 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, History, LineChart } from 'lucide-react';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { ArrowLeft, History, LineChart, Pencil } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 interface Reading {
@@ -31,6 +33,16 @@ interface PropertyReadingsProps {
         description: string | null;
         readings: Reading[];
     };
+}
+
+/** Значение для input[type="datetime-local"] в локальном времени браузера */
+function toDatetimeLocalValue(iso: string): string {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) {
+        return '';
+    }
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function formatDateTime(iso: string): string {
@@ -65,6 +77,24 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
 
     const latest = property.readings[0] ?? null;
     const [chartOpen, setChartOpen] = useState(false);
+    const [editOpen, setEditOpen] = useState(false);
+
+    const defaultRecordedAt = useMemo(
+        () => toDatetimeLocalValue(new Date().toISOString()),
+        [],
+    );
+
+    const createForm = useForm({
+        value: '',
+        recorded_at: defaultRecordedAt,
+    });
+
+    const editForm = useForm({
+        value: '',
+        recorded_at: '',
+    });
+
+    const [editingId, setEditingId] = useState<number | null>(null);
 
     const chartData: ChartReadingPoint[] = useMemo(
         () =>
@@ -83,6 +113,41 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
                 })),
         [property.readings],
     );
+
+    const submitCreate = (e: React.FormEvent) => {
+        e.preventDefault();
+        createForm.post(route('property.readings.store', [object.id, property.id]), {
+            preserveScroll: true,
+            onSuccess: () => {
+                createForm.reset();
+                createForm.setData('recorded_at', toDatetimeLocalValue(new Date().toISOString()));
+            },
+        });
+    };
+
+    const openEdit = (reading: Reading) => {
+        setEditingId(reading.id);
+        editForm.setData({
+            value: String(reading.value),
+            recorded_at: toDatetimeLocalValue(reading.recorded_at),
+        });
+        setEditOpen(true);
+    };
+
+    const submitEdit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (editingId == null) return;
+        editForm.put(
+            route('property.readings.update', [object.id, property.id, editingId]),
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setEditOpen(false);
+                    setEditingId(null);
+                },
+            },
+        );
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -146,6 +211,105 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
 
                 <Card>
                     <CardHeader>
+                        <CardTitle>Добавить показание</CardTitle>
+                        <CardDescription>Введите значение и дату/время (календарик в поле даты)</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={submitCreate} className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
+                            <div className="grid flex-1 gap-2 sm:min-w-[160px]">
+                                <Label htmlFor="create-value">Показание</Label>
+                                <Input
+                                    id="create-value"
+                                    type="number"
+                                    inputMode="decimal"
+                                    step="any"
+                                    value={createForm.data.value}
+                                    onChange={(e) => createForm.setData('value', e.target.value)}
+                                    required
+                                    aria-invalid={!!createForm.errors.value}
+                                />
+                                {createForm.errors.value && (
+                                    <p className="text-sm text-destructive">{createForm.errors.value}</p>
+                                )}
+                            </div>
+                            <div className="grid flex-1 gap-2 sm:min-w-[220px]">
+                                <Label htmlFor="create-recorded">Дата и время</Label>
+                                <Input
+                                    id="create-recorded"
+                                    type="datetime-local"
+                                    value={createForm.data.recorded_at}
+                                    onChange={(e) => createForm.setData('recorded_at', e.target.value)}
+                                    required
+                                    aria-invalid={!!createForm.errors.recorded_at}
+                                />
+                                {createForm.errors.recorded_at && (
+                                    <p className="text-sm text-destructive">{createForm.errors.recorded_at}</p>
+                                )}
+                            </div>
+                            <Button type="submit" disabled={createForm.processing} className="sm:shrink-0">
+                                {createForm.processing ? 'Сохранение…' : 'Добавить'}
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
+
+                <Dialog
+                    open={editOpen}
+                    onOpenChange={(open) => {
+                        setEditOpen(open);
+                        if (!open) setEditingId(null);
+                    }}
+                >
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Изменить показание</DialogTitle>
+                            <DialogDescription>Значение и дата/время для выбранной записи</DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={submitEdit} className="space-y-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-value">Показание</Label>
+                                <Input
+                                    id="edit-value"
+                                    type="number"
+                                    inputMode="decimal"
+                                    step="any"
+                                    value={editForm.data.value}
+                                    onChange={(e) => editForm.setData('value', e.target.value)}
+                                    required
+                                    aria-invalid={!!editForm.errors.value}
+                                />
+                                {editForm.errors.value && (
+                                    <p className="text-sm text-destructive">{editForm.errors.value}</p>
+                                )}
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-recorded">Дата и время</Label>
+                                <Input
+                                    id="edit-recorded"
+                                    type="datetime-local"
+                                    value={editForm.data.recorded_at}
+                                    onChange={(e) => editForm.setData('recorded_at', e.target.value)}
+                                    required
+                                    aria-invalid={!!editForm.errors.recorded_at}
+                                />
+                                {editForm.errors.recorded_at && (
+                                    <p className="text-sm text-destructive">{editForm.errors.recorded_at}</p>
+                                )}
+                            </div>
+                            <div className="flex justify-end gap-2">
+                                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+                                    Отмена
+                                </Button>
+                                <Button type="submit" disabled={editForm.processing}>
+                                    {editForm.processing ? 'Сохранение…' : 'Сохранить'}
+                                </Button>
+                            </div>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+
+                <Card>
+                    <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
                             <History className="h-5 w-5" />
                             История показаний
@@ -153,7 +317,7 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
                         <CardDescription>
                             {property.readings.length > 0
                                 ? `Всего записей: ${property.readings.length}`
-                                : 'Показания появятся после передачи через Telegram-бота'}
+                                : 'Добавьте показание выше или передайте через Telegram-бота'}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="p-0">
@@ -167,6 +331,9 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
                                             <th className="px-6 py-3 font-medium">Дата</th>
                                             <th className="px-6 py-3 font-medium">Время</th>
                                             <th className="px-6 py-3 text-right font-medium">Показание</th>
+                                            <th className="w-[100px] px-6 py-3 text-right font-medium">
+                                                Действия
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -190,6 +357,17 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
                                                     </td>
                                                     <td className="px-6 py-3 text-right font-semibold tabular-nums">
                                                         {formatValue(reading.value)}
+                                                    </td>
+                                                    <td className="px-6 py-3 text-right">
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => openEdit(reading)}
+                                                        >
+                                                            <Pencil className="mr-1 h-4 w-4" />
+                                                            Изменить
+                                                        </Button>
                                                     </td>
                                                 </tr>
                                             );

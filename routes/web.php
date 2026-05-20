@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\v1\Object\ObjectController;
 use App\Http\Controllers\v1\Object\ObjectPropertyController;
+use App\Http\Controllers\v1\Object\PropertyReadingController;
 use App\Http\Controllers\v1\SubscribeUser\SubscribeUserController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -36,6 +37,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     //Object properties
     Route::get('/objects/{object}/properties/{propertyId}', [ObjectPropertyController::class, 'show'])->name('property.show');
+    Route::post('/objects/{object}/properties/{propertyId}/readings', [PropertyReadingController::class, 'store'])->name('property.readings.store');
+    Route::put('/objects/{object}/properties/{propertyId}/readings/{readingId}', [PropertyReadingController::class, 'update'])->name('property.readings.update');
     Route::post('/objects/{object}/properties', [ObjectPropertyController::class, 'create'])->name('property.create');
     Route::put('/objects/{object}/properties/{propertyId}', [ObjectPropertyController::class, 'update'])->name('property.update');
     Route::delete('/objects/{object}/properties/{propertyId}', [ObjectPropertyController::class, 'destroy'])->name('property.destroy');
