@@ -1,10 +1,20 @@
+import { ReadingsLineChart, type ChartReadingPoint } from '@/components/object/readings-line-chart';
 import AppLayout from '@/layouts/app-layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, History } from 'lucide-react';
+import { ArrowLeft, History, LineChart } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 interface Reading {
     id: number;
@@ -54,6 +64,25 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
     ];
 
     const latest = property.readings[0] ?? null;
+    const [chartOpen, setChartOpen] = useState(false);
+
+    const chartData: ChartReadingPoint[] = useMemo(
+        () =>
+            [...property.readings]
+                .sort(
+                    (a, b) =>
+                        new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime(),
+                )
+                .map((reading) => ({
+                    label: new Date(reading.recorded_at).toLocaleDateString('ru-RU', {
+                        day: '2-digit',
+                        month: 'short',
+                    }),
+                    fullLabel: formatDateTime(reading.recorded_at),
+                    value: Number(reading.value),
+                })),
+        [property.readings],
+    );
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -80,6 +109,27 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
                             <p className="mt-1 text-muted-foreground">{property.description}</p>
                         )}
                     </div>
+                    <Dialog open={chartOpen} onOpenChange={setChartOpen}>
+                        <DialogTrigger asChild>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={property.readings.length === 0}
+                            >
+                                <LineChart className="mr-2 h-4 w-4" />
+                                График показаний
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-3xl sm:max-w-4xl">
+                            <DialogHeader>
+                                <DialogTitle>График: {property.name}</DialogTitle>
+                                <DialogDescription>
+                                    Даты по горизонтали, значения показаний по вертикали
+                                </DialogDescription>
+                            </DialogHeader>
+                            <ReadingsLineChart data={chartData} />
+                        </DialogContent>
+                    </Dialog>
                 </div>
 
                 {latest && (
