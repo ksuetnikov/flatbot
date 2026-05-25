@@ -50,7 +50,15 @@ class ObjectModel extends Model
     protected $fillable = [
         'name',
         'description',
+        'notification_date',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'notification_date' => 'datetime',
+        ];
+    }
 
     /**
      * Пользователь, создавший данный объект

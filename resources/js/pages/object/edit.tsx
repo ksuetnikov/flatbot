@@ -1,6 +1,8 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
+import { NotificationDatePicker } from '@/components/ui/notification-date-picker';
+import { buildMonthlyNotificationLocal, parseMonthlyNotification } from '@/lib/notification-schedule';
 import { useState } from 'react';
 import axios from 'axios';
 
@@ -24,7 +26,7 @@ interface EditObjectProps {
         name: string;
         subscribers: Subscriber[];
         properties: ObjectProperty[];
-        notification_date: string;
+        notification_date: string | null;
         description?: string;
     };
     allSubscribers?: Subscriber[];
@@ -46,7 +48,12 @@ const counterCodeClass =
 export default function EditObject({ object, allSubscribers = [], allProperties = [] }: EditObjectProps) {
     const { data, setData, put, processing, errors } = useForm({
         name: object.name,
-        notification_date: object.notification_date || '',
+        notification_date: object.notification_date
+            ? buildMonthlyNotificationLocal(
+                  parseMonthlyNotification(object.notification_date) ?? { day: 1, hour: 9, minute: 0 },
+                  object.notification_date,
+              )
+            : '',
         description: object.description || '',
     });
 
@@ -275,21 +282,14 @@ export default function EditObject({ object, allSubscribers = [], allProperties 
                             {errors.description && <p className="mt-2 text-sm text-red-600">{errors.description}</p>}
                         </div>
 
-                        <div>
-                            <label htmlFor="notification_date" className="block text-sm font-medium text-gray-700">
-                                Дата уведомлений
-                            </label>
-                            <input
-                                id="notification_date"
-                                type="text"
-                                value={data.notification_date}
-                                onChange={(e) => setData('notification_date', e.target.value)}
-                                className="mt-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            />
-                            {errors.notification_date && (
-                                <p className="mt-2 text-sm text-red-600">{errors.notification_date}</p>
-                            )}
-                        </div>
+                        <NotificationDatePicker
+                            id="notification_date"
+                            label="Дата уведомлений"
+                            value={data.notification_date}
+                            referenceIso={object.notification_date}
+                            onChange={(value) => setData('notification_date', value)}
+                            error={errors.notification_date}
+                        />
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Подписчики</label>
