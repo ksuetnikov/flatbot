@@ -34,6 +34,7 @@ use Illuminate\Support\Carbon;
  * @property-read ObjectModel $object Объект
  * @property-read Collection<PropertyReading> $readings История показаний
  * @property-read null|PropertyReading $latestReading Последнее показание
+ * @property-read Collection<ObjectPropertyFile> $files Вложения (фото, PDF)
  *
  * @mixin Eloquent
  */
@@ -67,5 +68,11 @@ class ObjectProperty extends Model
     {
         return $this->hasOne(PropertyReading::class, 'object_property_id', 'id')
             ->latestOfMany('recorded_at');
+    }
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(ObjectPropertyFile::class, 'object_property_id', 'id')
+            ->orderByDesc('created_at');
     }
 }

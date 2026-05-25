@@ -14,14 +14,30 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, History, LineChart, Pencil } from 'lucide-react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import {
+    ArrowLeft,
+    ExternalLink,
+    History,
+    LineChart,
+    Paperclip,
+    Pencil,
+    Trash2,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 interface Reading {
     id: number;
     value: string;
     recorded_at: string;
+}
+
+interface PropertyFile {
+    id: number;
+    original_name: string;
+    size: number;
+    mime_type: string | null;
+    url: string;
 }
 
 interface PropertyReadingsProps {
@@ -32,6 +48,8 @@ interface PropertyReadingsProps {
         code: string | null;
         description: string | null;
         readings: Reading[];
+        /** С сервера всегда приходит после миграции; optional — чтобы не падать на старом кэше */
+        files?: PropertyFile[];
     };
 }
 
@@ -68,7 +86,26 @@ function formatValue(value: string): string {
     return Number.isNaN(num) ? value : num.toLocaleString('ru-RU');
 }
 
+function formatFileSize(bytes: number): string {
+    if (bytes < 1024) {
+        return `${bytes} Б`;
+    }
+    if (bytes < 1024 * 1024) {
+        return `${(bytes / 1024).toFixed(1)} КБ`;
+    }
+    return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
+}
+
+function isImageMime(mime: string | null): boolean {
+    if (!mime) {
+        return false;
+    }
+    return mime.startsWith('image/');
+}
+
 export default function PropertyReadings({ object, property }: PropertyReadingsProps) {
+    const files = property.files ?? [];
+
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Объекты', href: '/dashboard' },
         { title: object.name, href: route('object.show', object.id) },
@@ -78,6 +115,7 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
     const latest = property.readings[0] ?? null;
     const [chartOpen, setChartOpen] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
+    const [fileInputKey, setFileInputKey] = useState(0);
 
     const defaultRecordedAt = useMemo(
         () => toDatetimeLocalValue(new Date().toISOString()),
@@ -95,6 +133,8 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
     });
 
     const [editingId, setEditingId] = useState<number | null>(null);
+
+    const fileForm = useForm<{ file: File | null }>({ file: null });
 
     const chartData: ChartReadingPoint[] = useMemo(
         () =>
@@ -149,6 +189,31 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
         );
     };
 
+    const submitFile = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!fileForm.data.file) {
+            return;
+        }
+        fileForm.post(route('property.files.store', [object.id, property.id]), {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                fileForm.reset();
+                fileForm.setData('file', null);
+                setFileInputKey((k) => k + 1);
+            },
+        });
+    };
+
+    const confirmDeleteFile = (file: PropertyFile) => {
+        if (!confirm(`Удалить файл «${file.original_name}»?`)) {
+            return;
+        }
+        router.delete(route('property.files.destroy', [object.id, property.id, file.id]), {
+            preserveScroll: true,
+        });
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`${property.name} — показания`} />
@@ -196,6 +261,112 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
                         </DialogContent>
                     </Dialog>
                 </div>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg">
+                            <Paperclip className="h-5 w-5" />
+                            Вложения
+                        </CardTitle>
+                        <CardDescription>
+                            Фотографии и PDF до 10 МБ каждый. Файлы хранятся локально (диск public); позже можно
+                            переключить на облако.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <form onSubmit={submitFile} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+                            <div className="grid flex-1 gap-2 sm:min-w-[200px]">
+                                <Label htmlFor="property-file">Файл</Label>
+                                <Input
+                                    key={fileInputKey}
+                                    id="property-file"
+                                    type="file"
+                                    accept="image/*,.pdf,application/pdf"
+                                    onChange={(e) =>
+                                        fileForm.setData('file', e.target.files?.[0] ?? null)
+                                    }
+                                    aria-invalid={!!fileForm.errors.file}
+                                />
+                                {fileForm.errors.file && (
+                                    <p className="text-sm text-destructive">{fileForm.errors.file}</p>
+                                )}
+                            </div>
+                            <Button
+                                type="submit"
+                                disabled={fileForm.processing || !fileForm.data.file}
+                                className="sm:shrink-0"
+                            >
+                                {fileForm.processing ? 'Загрузка…' : 'Прикрепить'}
+                            </Button>
+                        </form>
+
+                        {files.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">Пока нет вложений</p>
+                        ) : (
+                            <ul className="divide-y rounded-md border">
+                                {files.map((file) => (
+                                    <li
+                                        key={file.id}
+                                        className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between"
+                                    >
+                                        <div className="flex min-w-0 flex-1 items-start gap-3">
+                                            {isImageMime(file.mime_type) ? (
+                                                <a
+                                                    href={file.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="shrink-0 overflow-hidden rounded border bg-muted"
+                                                >
+                                                    <img
+                                                        src={file.url}
+                                                        alt=""
+                                                        className="h-16 w-16 object-cover"
+                                                    />
+                                                </a>
+                                            ) : (
+                                                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded border bg-muted text-xs text-muted-foreground">
+                                                    PDF
+                                                </div>
+                                            )}
+                                            <div className="min-w-0">
+                                                <a
+                                                    href={file.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="font-medium hover:underline"
+                                                >
+                                                    {file.original_name}
+                                                </a>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {formatFileSize(file.size)}
+                                                    {file.mime_type ? ` · ${file.mime_type}` : ''}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex shrink-0 gap-2 sm:justify-end">
+                                            <Button variant="outline" size="sm" asChild>
+                                                <a href={file.url} target="_blank" rel="noopener noreferrer">
+                                                    <ExternalLink className="mr-1 h-4 w-4" />
+                                                    Открыть
+                                                </a>
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-destructive hover:text-destructive"
+                                                onClick={() => confirmDeleteFile(file)}
+                                            >
+                                                <Trash2 className="mr-1 h-4 w-4" />
+                                                Удалить
+                                            </Button>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </CardContent>
+                </Card>
 
                 {latest && (
                     <Card className="border-primary/20 bg-primary/5">

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\v1\Object\ObjectController;
 use App\Http\Controllers\v1\Object\ObjectPropertyController;
+use App\Http\Controllers\v1\Object\ObjectPropertyFileController;
 use App\Http\Controllers\v1\Object\PropertyReadingController;
 use App\Http\Controllers\v1\SubscribeUser\SubscribeUserController;
 use App\Models\User;
@@ -37,6 +38,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     //Object properties
     Route::get('/objects/{object}/properties/{propertyId}', [ObjectPropertyController::class, 'show'])->name('property.show');
+    Route::get('/objects/{object}/properties/{propertyId}/files/{fileId}', [ObjectPropertyFileController::class, 'show'])->name('property.files.show');
+    Route::post('/objects/{object}/properties/{propertyId}/files', [ObjectPropertyFileController::class, 'store'])->name('property.files.store');
+    Route::delete('/objects/{object}/properties/{propertyId}/files/{fileId}', [ObjectPropertyFileController::class, 'destroy'])->name('property.files.destroy');
     Route::post('/objects/{object}/properties/{propertyId}/readings', [PropertyReadingController::class, 'store'])->name('property.readings.store');
     Route::put('/objects/{object}/properties/{propertyId}/readings/{readingId}', [PropertyReadingController::class, 'update'])->name('property.readings.update');
     Route::post('/objects/{object}/properties', [ObjectPropertyController::class, 'create'])->name('property.create');
