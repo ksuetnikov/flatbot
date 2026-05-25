@@ -68,7 +68,7 @@ export default function Dashboard({ objects }: DashboardProps) {
                         {objects.map((object) => (
                             <Card
                                 key={object.id}
-                                className="flex flex-col transition-shadow hover:shadow-md"
+                                className="flex flex-col border-l-4 border-l-primary/80 transition-shadow hover:shadow-md"
                             >
                                 <CardHeader>
                                     <CardTitle className="line-clamp-1">{object.name}</CardTitle>

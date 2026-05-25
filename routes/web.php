@@ -6,10 +6,15 @@ use App\Http\Controllers\v1\Object\ObjectPropertyFileController;
 use App\Http\Controllers\v1\Object\PropertyReadingController;
 use App\Http\Controllers\v1\SubscribeUser\SubscribeUserController;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
+    if (Auth::check()) {
+        return redirect()->route('dashboard');
+    }
+
     return Inertia::render('welcome');
 })->name('home');
 
