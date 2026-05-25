@@ -1,3 +1,4 @@
+import { ExportExcelPanel } from '@/components/export/export-excel-panel';
 import { ReadingsLineChart, type ChartReadingPoint } from '@/components/object/readings-line-chart';
 import AppLayout from '@/layouts/app-layout';
 import { Badge } from '@/components/ui/badge';
@@ -281,6 +282,12 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
                         </DialogContent>
                     </Dialog>
                 </div>
+
+                <ExportExcelPanel
+                    exportRoute="property.readings.export"
+                    routeParams={[object.id, property.id]}
+                    description="Столбцы: дата, объект, показание, счётчик. По умолчанию — вся история показаний."
+                />
 
                 <Card>
                     <CardHeader>

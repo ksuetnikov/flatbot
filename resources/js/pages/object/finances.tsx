@@ -1,3 +1,4 @@
+import { ExportExcelPanel } from '@/components/export/export-excel-panel';
 import AppLayout from '@/layouts/app-layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -304,6 +305,12 @@ export default function ObjectFinances({ object, months }: ObjectFinancesProps) 
                         <p className="mt-1 text-muted-foreground">{object.name}</p>
                     </div>
                 </div>
+
+                <ExportExcelPanel
+                    exportRoute="object.finances.export"
+                    routeParams={object.id}
+                    description="Столбцы: дата, объект, тип, сумма, комментарий. По умолчанию — вся история."
+                />
 
                 <Card>
                     <CardHeader>

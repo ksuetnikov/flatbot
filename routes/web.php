@@ -63,6 +63,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/objects/{object}/properties/{propertyId}/files', [ObjectPropertyFileController::class, 'store'])->name('property.files.store');
     Route::put('/objects/{object}/properties/{propertyId}/files/{fileId}', [ObjectPropertyFileController::class, 'update'])->name('property.files.update');
     Route::delete('/objects/{object}/properties/{propertyId}/files/{fileId}', [ObjectPropertyFileController::class, 'destroy'])->name('property.files.destroy');
+    Route::get('/objects/{object}/properties/{propertyId}/readings/export', [PropertyReadingController::class, 'export'])->name('property.readings.export');
     Route::post('/objects/{object}/properties/{propertyId}/readings', [PropertyReadingController::class, 'store'])->name('property.readings.store');
     Route::put('/objects/{object}/properties/{propertyId}/readings/{readingId}', [PropertyReadingController::class, 'update'])->name('property.readings.update');
     Route::post('/objects/{object}/properties', [ObjectPropertyController::class, 'create'])->name('property.create');
@@ -70,6 +71,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/objects/{object}/properties/{propertyId}', [ObjectPropertyController::class, 'destroy'])->name('property.destroy');
 
     // Finances
+    Route::get('/objects/{object}/finances/export', [ObjectFinanceController::class, 'export'])->name('object.finances.export');
     Route::get('/objects/{object}/finances', [ObjectFinanceController::class, 'show'])->name('object.finances');
     Route::post('/objects/{object}/finances', [ObjectFinanceController::class, 'store'])->name('object.finances.store');
     Route::delete('/objects/{object}/finances/{entryId}', [ObjectFinanceController::class, 'destroy'])->name('object.finances.destroy');

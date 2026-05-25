@@ -5,16 +5,29 @@ declare(strict_types=1);
 namespace App\Http\Controllers\v1\Object;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Object\ExportPeriodRequest;
 use App\Http\Requests\Object\StoreObjectFinanceEntryRequest;
 use App\Models\Object\ObjectFinanceEntry;
 use App\Models\Object\ObjectModel;
+use App\Services\Export\ObjectFinancesExportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ObjectFinanceController extends Controller
 {
+    public function __construct(
+        private readonly ObjectFinancesExportService $objectFinancesExportService,
+    ) {
+    }
+
+    public function export(ExportPeriodRequest $request, ObjectModel $object): StreamedResponse
+    {
+        return $this->objectFinancesExportService->export($object, $request->toExportPeriod());
+    }
+
     public function show(ObjectModel $object): Response
     {
         $entries = $object->financeEntries()
