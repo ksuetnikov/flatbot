@@ -6,6 +6,7 @@ namespace App\Http\Controllers\v1\Object;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Object\StoreObjectPropertyFileRequest;
+use App\Http\Requests\Object\UpdateObjectPropertyFileRequest;
 use App\Models\Object\ObjectModel;
 use App\Models\Object\ObjectProperty;
 use App\Models\Object\ObjectPropertyFile;
@@ -63,6 +64,25 @@ class ObjectPropertyFileController extends Controller
             $file->original_name,
             ['Content-Type' => $file->mime_type ?? 'application/octet-stream'],
         );
+    }
+
+    public function update(
+        UpdateObjectPropertyFileRequest $request,
+        ObjectModel $object,
+        int $propertyId,
+        int $fileId,
+    ): RedirectResponse {
+        $this->assertPropertyBelongsToObject($object, $propertyId);
+
+        $file = ObjectPropertyFile::query()
+            ->where('object_property_id', $propertyId)
+            ->findOrFail($fileId);
+
+        $file->update([
+            'original_name' => trim($request->validated('original_name')),
+        ]);
+
+        return redirect()->back();
     }
 
     public function destroy(

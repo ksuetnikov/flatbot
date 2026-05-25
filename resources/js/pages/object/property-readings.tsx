@@ -107,6 +107,8 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
     const latest = property.readings[0] ?? null;
     const [chartOpen, setChartOpen] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
+    const [renameFileOpen, setRenameFileOpen] = useState(false);
+    const [renamingFileId, setRenamingFileId] = useState<number | null>(null);
     const [fileInputKey, setFileInputKey] = useState(0);
 
     const defaultRecordedAt = useMemo(
@@ -127,6 +129,8 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
     const [editingId, setEditingId] = useState<number | null>(null);
 
     const fileForm = useForm<{ file: File | null }>({ file: null });
+
+    const renameFileForm = useForm({ original_name: '' });
 
     const chartData: ChartReadingPoint[] = useMemo(
         () =>
@@ -195,6 +199,30 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
                 setFileInputKey((k) => k + 1);
             },
         });
+    };
+
+    const openRenameFile = (file: PropertyFile) => {
+        setRenamingFileId(file.id);
+        renameFileForm.setData('original_name', file.original_name);
+        renameFileForm.clearErrors();
+        setRenameFileOpen(true);
+    };
+
+    const submitRenameFile = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (renamingFileId == null) {
+            return;
+        }
+        renameFileForm.put(
+            route('property.files.update', [object.id, property.id, renamingFileId]),
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setRenameFileOpen(false);
+                    setRenamingFileId(null);
+                },
+            },
+        );
     };
 
     const confirmDeleteFile = (file: PropertyFile) => {
@@ -335,12 +363,21 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="flex shrink-0 gap-2 sm:justify-end">
+                                        <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
                                             <Button variant="outline" size="sm" asChild>
                                                 <a href={file.url} target="_blank" rel="noopener noreferrer">
                                                     <ExternalLink className="mr-1 h-4 w-4" />
                                                     Открыть
                                                 </a>
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => openRenameFile(file)}
+                                            >
+                                                <Pencil className="mr-1 h-4 w-4" />
+                                                Переименовать
                                             </Button>
                                             <Button
                                                 type="button"
@@ -415,6 +452,58 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
                         </form>
                     </CardContent>
                 </Card>
+
+                <Dialog
+                    open={renameFileOpen}
+                    onOpenChange={(open) => {
+                        setRenameFileOpen(open);
+                        if (!open) {
+                            setRenamingFileId(null);
+                        }
+                    }}
+                >
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Переименовать файл</DialogTitle>
+                            <DialogDescription>
+                                Отображаемое имя в списке вложений. Файл на диске не перемещается.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={submitRenameFile} className="space-y-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="rename-file-name">Имя файла</Label>
+                                <Input
+                                    id="rename-file-name"
+                                    type="text"
+                                    value={renameFileForm.data.original_name}
+                                    onChange={(e) =>
+                                        renameFileForm.setData('original_name', e.target.value)
+                                    }
+                                    required
+                                    maxLength={255}
+                                    aria-invalid={!!renameFileForm.errors.original_name}
+                                />
+                                {renameFileForm.errors.original_name && (
+                                    <p className="text-sm text-destructive">
+                                        {renameFileForm.errors.original_name}
+                                    </p>
+                                )}
+                            </div>
+                            <div className="flex justify-end gap-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setRenameFileOpen(false)}
+                                >
+                                    Отмена
+                                </Button>
+                                <Button type="submit" disabled={renameFileForm.processing}>
+                                    {renameFileForm.processing ? 'Сохранение…' : 'Сохранить'}
+                                </Button>
+                            </div>
+                        </form>
+                    </DialogContent>
+                </Dialog>
 
                 <Dialog
                     open={editOpen}
