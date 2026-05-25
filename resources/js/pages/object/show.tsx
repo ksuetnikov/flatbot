@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { Gauge, Settings2, Users } from 'lucide-react';
+import { Gauge, Settings2, Users, Wallet } from 'lucide-react';
 
 interface LatestReading {
     value: string;
@@ -19,6 +19,13 @@ interface PropertySummary {
     latest_reading: LatestReading | null;
 }
 
+interface FinanceSummary {
+    total_income: number;
+    total_expense: number;
+    balance: number;
+    entries_count: number;
+}
+
 interface ObjectShowProps {
     object: {
         id: number;
@@ -27,6 +34,7 @@ interface ObjectShowProps {
         notification_date?: string | null;
         created_at: string;
         subscribers: Array<{ id: number; name: string }>;
+        finance_summary: FinanceSummary;
         properties: PropertySummary[];
     };
 }
@@ -44,6 +52,10 @@ function formatDateTime(iso: string): string {
 function formatValue(value: string): string {
     const num = Number(value);
     return Number.isNaN(num) ? value : num.toLocaleString('ru-RU');
+}
+
+function formatMoney(value: number): string {
+    return value.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
 export default function ObjectShow({ object }: ObjectShowProps) {
@@ -146,6 +158,50 @@ export default function ObjectShow({ object }: ObjectShowProps) {
                             ))}
                         </div>
                     )}
+                </div>
+
+                <div>
+                    <h2 className="mb-4 text-lg font-semibold">Финансы</h2>
+                    <Link
+                        href={route('object.finances', object.id)}
+                        className="group block max-w-xl transition-transform hover:scale-[1.01]"
+                    >
+                        <Card className="border-border/80 transition-shadow group-hover:border-primary/40 group-hover:shadow-md">
+                            <CardHeader>
+                                <CardDescription className="flex items-center gap-2">
+                                    <Wallet className="h-4 w-4" />
+                                    Доходы и расходы по месяцам
+                                </CardDescription>
+                                <CardTitle className="text-base">Учёт финансов</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {object.finance_summary.entries_count === 0 ? (
+                                    <p className="text-sm text-muted-foreground">Записей пока нет</p>
+                                ) : (
+                                    <div className="space-y-1 text-sm">
+                                        <p>
+                                            <span className="text-muted-foreground">Доходы: </span>
+                                            <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                                                {formatMoney(object.finance_summary.total_income)}
+                                            </span>
+                                        </p>
+                                        <p>
+                                            <span className="text-muted-foreground">Расходы: </span>
+                                            <span className="font-medium text-rose-600 dark:text-rose-400">
+                                                {formatMoney(object.finance_summary.total_expense)}
+                                            </span>
+                                        </p>
+                                        <p className="text-lg font-bold tabular-nums">
+                                            Баланс: {formatMoney(object.finance_summary.balance)}
+                                        </p>
+                                    </div>
+                                )}
+                                <p className="mt-4 text-xs font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                                    Открыть финансы →
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </Link>
                 </div>
             </div>
         </AppLayout>

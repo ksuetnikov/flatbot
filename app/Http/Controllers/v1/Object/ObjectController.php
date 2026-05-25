@@ -7,6 +7,7 @@ namespace App\Http\Controllers\v1\Object;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Object\UpdateObjectRequest;
 use App\Models\Object\ObjectModel;
+use App\Services\Object\ObjectFinanceSummaryService;
 use App\Services\Object\ObjectService;
 use Auth;
 use Illuminate\Http\RedirectResponse;
@@ -19,7 +20,8 @@ use Inertia\Response;
 class ObjectController extends Controller
 {
     public function __construct(
-        private readonly ObjectService $objectService
+        private readonly ObjectService $objectService,
+        private readonly ObjectFinanceSummaryService $financeSummaryService,
     ) {
     }
 
@@ -31,6 +33,8 @@ class ObjectController extends Controller
             'properties.latestReading',
         ]);
 
+        $financeSummaries = $this->financeSummaryService->summariesForObjects(collect([$object]));
+
         return Inertia::render('object/show', [
             'object' => [
                 'id' => $object->id,
@@ -39,6 +43,12 @@ class ObjectController extends Controller
                 'notification_date' => $object->notification_date,
                 'created_at' => $object->created_at,
                 'subscribers' => $object->subscribers,
+                'finance_summary' => $financeSummaries[$object->id] ?? [
+                    'total_income' => 0,
+                    'total_expense' => 0,
+                    'balance' => 0,
+                    'entries_count' => 0,
+                ],
                 'properties' => $object->properties->map(static fn ($property) => [
                     'id' => $property->id,
                     'name' => $property->name,

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { Building2, CirclePlus, Trash2 } from 'lucide-react';
+import { Building2, CirclePlus, Trash2, Wallet } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -12,6 +12,13 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/dashboard',
     },
 ];
+
+interface FinanceSummary {
+    total_income: number;
+    total_expense: number;
+    balance: number;
+    entries_count: number;
+}
 
 interface DashboardProps {
     objects: Array<{
@@ -21,7 +28,12 @@ interface DashboardProps {
         notification_date?: string;
         created_at: string;
         updated_at: string;
+        finance_summary: FinanceSummary;
     }>;
+}
+
+function formatMoney(value: number): string {
+    return value.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
 export default function Dashboard({ objects }: DashboardProps) {
@@ -78,10 +90,43 @@ export default function Dashboard({ objects }: DashboardProps) {
                                         <CardDescription className="italic">Без описания</CardDescription>
                                     )}
                                 </CardHeader>
-                                <CardContent className="flex-1">
+                                <CardContent className="flex-1 space-y-3">
                                     <p className="text-xs text-muted-foreground">
                                         Создан: {new Date(object.created_at).toLocaleDateString('ru-RU')}
                                     </p>
+                                    <div className="rounded-md border border-border/60 bg-muted/30 p-3">
+                                        <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                                            <Wallet className="h-3.5 w-3.5" />
+                                            Финансы
+                                        </p>
+                                        {object.finance_summary.entries_count === 0 ? (
+                                            <p className="text-xs text-muted-foreground">Нет записей</p>
+                                        ) : (
+                                            <div className="space-y-0.5 text-xs">
+                                                <p>
+                                                    Доходы:{' '}
+                                                    <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                                                        {formatMoney(object.finance_summary.total_income)}
+                                                    </span>
+                                                </p>
+                                                <p>
+                                                    Расходы:{' '}
+                                                    <span className="font-medium text-rose-600 dark:text-rose-400">
+                                                        {formatMoney(object.finance_summary.total_expense)}
+                                                    </span>
+                                                </p>
+                                                <p className="font-semibold">
+                                                    Баланс: {formatMoney(object.finance_summary.balance)}
+                                                </p>
+                                            </div>
+                                        )}
+                                        <Link
+                                            href={route('object.finances', object.id)}
+                                            className="mt-2 inline-block text-xs font-medium text-primary hover:underline"
+                                        >
+                                            Управление →
+                                        </Link>
+                                    </div>
                                 </CardContent>
                                 <CardFooter className="flex gap-2">
                                     <Button asChild className="flex-1">

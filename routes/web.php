@@ -1,11 +1,13 @@
 <?php
 
 use App\Http\Controllers\v1\Object\ObjectController;
+use App\Http\Controllers\v1\Object\ObjectFinanceController;
 use App\Http\Controllers\v1\Object\ObjectPropertyController;
 use App\Http\Controllers\v1\Object\ObjectPropertyFileController;
 use App\Http\Controllers\v1\Object\PropertyReadingController;
 use App\Http\Controllers\v1\SubscribeUser\SubscribeUserController;
 use App\Models\User;
+use App\Services\Object\ObjectFinanceSummaryService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -20,12 +22,26 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard route
-    Route::get('dashboard', function () {
+    Route::get('dashboard', function (ObjectFinanceSummaryService $financeSummaryService) {
         $user = Auth::user();
         $objects = $user->objects;
+        $summaries = $financeSummaryService->summariesForObjects($objects);
 
         return Inertia::render('dashboard', [
-            'objects' => $objects,
+            'objects' => $objects->map(static fn ($object) => [
+                'id' => $object->id,
+                'name' => $object->name,
+                'description' => $object->description,
+                'notification_date' => $object->notification_date,
+                'created_at' => $object->created_at,
+                'updated_at' => $object->updated_at,
+                'finance_summary' => $summaries[$object->id] ?? [
+                    'total_income' => 0,
+                    'total_expense' => 0,
+                    'balance' => 0,
+                    'entries_count' => 0,
+                ],
+            ]),
         ]);
     })->name('dashboard');
 
@@ -52,6 +68,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/objects/{object}/properties', [ObjectPropertyController::class, 'create'])->name('property.create');
     Route::put('/objects/{object}/properties/{propertyId}', [ObjectPropertyController::class, 'update'])->name('property.update');
     Route::delete('/objects/{object}/properties/{propertyId}', [ObjectPropertyController::class, 'destroy'])->name('property.destroy');
+
+    // Finances
+    Route::get('/objects/{object}/finances', [ObjectFinanceController::class, 'show'])->name('object.finances');
+    Route::post('/objects/{object}/finances', [ObjectFinanceController::class, 'store'])->name('object.finances.store');
+    Route::delete('/objects/{object}/finances/{entryId}', [ObjectFinanceController::class, 'destroy'])->name('object.finances.destroy');
 
 });
 

@@ -33,6 +33,7 @@ use Illuminate\Support\Carbon;
  * @method static Builder|self query()
  * @property-read Collection<SubscribeUser> $subscribers Подписчики
  * @property-read Collection<ObjectProperty> $properties Свойства
+ * @property-read Collection<ObjectFinanceEntry> $financeEntries Финансы
  * @property-read User $user Пользователь
  *
  * @mixin Eloquent
@@ -82,5 +83,13 @@ class ObjectModel extends Model
     public function properties(): HasMany
     {
         return $this->hasMany(ObjectProperty::class, 'object_id', 'id');
+    }
+
+    /**
+     * Записи доходов и расходов
+     */
+    public function financeEntries(): HasMany
+    {
+        return $this->hasMany(ObjectFinanceEntry::class, 'object_id', 'id');
     }
 }
