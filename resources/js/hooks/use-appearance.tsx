@@ -34,8 +34,11 @@ const mediaQuery = () => {
 };
 
 const handleSystemThemeChange = () => {
-    const currentAppearance = localStorage.getItem('appearance') as Appearance;
-    applyTheme(currentAppearance || 'system');
+    const currentAppearance = (localStorage.getItem('appearance') as Appearance) || 'system';
+
+    if (currentAppearance === 'system') {
+        applyTheme('system');
+    }
 };
 
 export function initializeTheme() {
@@ -43,31 +46,54 @@ export function initializeTheme() {
 
     applyTheme(savedAppearance);
 
-    // Add the event listener for system theme changes...
     mediaQuery()?.addEventListener('change', handleSystemThemeChange);
 }
 
 export function useAppearance() {
     const [appearance, setAppearance] = useState<Appearance>('system');
+    const [isDark, setIsDark] = useState(false);
 
-    const updateAppearance = useCallback((mode: Appearance) => {
-        setAppearance(mode);
+    const syncResolvedTheme = useCallback(() => {
+        if (typeof document === 'undefined') {
+            return;
+        }
 
-        // Store in localStorage for client-side persistence...
-        localStorage.setItem('appearance', mode);
-
-        // Store in cookie for SSR...
-        setCookie('appearance', mode);
-
-        applyTheme(mode);
+        setIsDark(document.documentElement.classList.contains('dark'));
     }, []);
 
-    useEffect(() => {
-        const savedAppearance = localStorage.getItem('appearance') as Appearance | null;
-        updateAppearance(savedAppearance || 'system');
+    const updateAppearance = useCallback(
+        (mode: Appearance) => {
+            setAppearance(mode);
+            localStorage.setItem('appearance', mode);
+            setCookie('appearance', mode);
+            applyTheme(mode);
+            syncResolvedTheme();
+        },
+        [syncResolvedTheme],
+    );
 
-        return () => mediaQuery()?.removeEventListener('change', handleSystemThemeChange);
+    const toggleTheme = useCallback(() => {
+        const next = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+        updateAppearance(next);
     }, [updateAppearance]);
 
-    return { appearance, updateAppearance } as const;
+    useEffect(() => {
+        const savedAppearance = (localStorage.getItem('appearance') as Appearance) || 'system';
+
+        setAppearance(savedAppearance);
+        applyTheme(savedAppearance);
+        syncResolvedTheme();
+
+        const mq = mediaQuery();
+        const onSystemChange = () => {
+            handleSystemThemeChange();
+            syncResolvedTheme();
+        };
+
+        mq?.addEventListener('change', onSystemChange);
+
+        return () => mq?.removeEventListener('change', onSystemChange);
+    }, [syncResolvedTheme]);
+
+    return { appearance, isDark, updateAppearance, toggleTheme } as const;
 }

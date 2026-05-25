@@ -1,4 +1,5 @@
 import AppLogoIcon from '@/components/app-logo-icon';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { APP_DESCRIPTION, APP_NAME, APP_TAGLINE } from '@/lib/brand';
 import { type SharedData } from '@/types';
@@ -33,7 +34,8 @@ export default function Welcome() {
                             </span>
                             <span className="font-semibold tracking-tight">{APP_NAME}</span>
                         </Link>
-                        <nav className="flex items-center gap-2 sm:gap-3">
+                        <nav className="flex items-center gap-2 sm:gap-4">
+                            <ThemeToggle />
                             {auth.user ? (
                                 <Button asChild size="sm">
                                     <Link href={route('dashboard')}>Панель</Link>
