@@ -9,6 +9,7 @@ use App\Http\Requests\Object\UpdateObjectRequest;
 use App\Models\Object\ObjectModel;
 use App\Services\Object\ObjectFinanceSummaryService;
 use App\Services\Object\ObjectService;
+use App\Services\SubscribeUser\SubscribeUserService;
 use Auth;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -22,6 +23,7 @@ class ObjectController extends Controller
     public function __construct(
         private readonly ObjectService $objectService,
         private readonly ObjectFinanceSummaryService $financeSummaryService,
+        private readonly SubscribeUserService $subscribeUserService,
     ) {
     }
 
@@ -66,13 +68,35 @@ class ObjectController extends Controller
     /** Настройки объекта (подписчики, счётчики) */
     public function edit(ObjectModel $object): Response
     {
-        $object->load(['subscribers', 'properties']);
+        $this->subscribeUserService->backfillTelegramUsers($object->getKey());
+        $object->load(['subscribers.telegramUser', 'properties']);
 
         return Inertia::render('object/edit', [
-            'object' => $object,
-            'allSubscribers' => $object->subscribers,
+            'object' => [
+                'id' => $object->id,
+                'name' => $object->name,
+                'description' => $object->description,
+                'notification_date' => $object->notification_date,
+                'subscribers' => $this->mapSubscribers($object),
+                'properties' => $object->properties,
+            ],
+            'allSubscribers' => $this->mapSubscribers($object),
             'allProperties' => $object->properties,
         ]);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function mapSubscribers(ObjectModel $object): array
+    {
+        return $object->subscribers->map(static fn ($subscriber) => [
+            'id' => $subscriber->id,
+            'name' => $subscriber->name,
+            'registrationKey' => $subscriber->telegramUser?->registration_key,
+            'isRegistered' => $subscriber->telegramUser?->isRegistered() ?? false,
+            'telegramUsername' => $subscriber->telegramUser?->username,
+        ])->values()->all();
     }
 
     /** Создание объекта

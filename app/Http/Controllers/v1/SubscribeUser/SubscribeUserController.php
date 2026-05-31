@@ -6,13 +6,13 @@ namespace App\Http\Controllers\v1\SubscribeUser;
 
 use App\DTO\SubscribeUser\SubscribeUserDTO;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SubscribeUser\CreateSubscribeUserRequest;
 use App\Http\Requests\SubscribeUser\UpdateSubscribeUserRequest;
 use App\Http\Resources\SubscribeUser\SubscribeUserGetResource;
 use App\Models\Object\ObjectModel;
 use App\Models\SubscribeUser\SubscribeUser;
 use App\Services\SubscribeUser\SubscribeUserService;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 /**
  * @author Kirill Suetnikov
@@ -24,19 +24,9 @@ class SubscribeUserController extends Controller
     ) {
     }
 
-    /**
-     * @param Request $request
-     * @param ObjectModel $object
-     *
-     * @return RedirectResponse
-     */
-    public function create(Request $request, ObjectModel $object)
+    public function create(CreateSubscribeUserRequest $request, ObjectModel $object): SubscribeUserGetResource
     {
-        // $this->authorize('update', $object);
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
-        $dto = SubscribeUserDTO::from($validated);
+        $dto = SubscribeUserDTO::from($request->validated());
         $subscribeUser = $this
             ->subscribeUserService
             ->create(
@@ -59,7 +49,7 @@ class SubscribeUserController extends Controller
         $dto = SubscribeUserDTO::from($request->validated());
         $subscriber = $this->subscribeUserService->update($subscriber, $dto);
 
-        return SubscribeUserGetResource::make($subscriber);
+        return SubscribeUserGetResource::make($subscriber->load('telegramUser'));
     }
 
     /** Удаление подписчика из объекта
@@ -69,7 +59,7 @@ class SubscribeUserController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function destroy(ObjectModel $object, int $subscriberId)
+    public function destroy(ObjectModel $object, int $subscriberId): Response
     {
         // $this->authorize('delete', $object);
         \Log::info('destroy subscribers');

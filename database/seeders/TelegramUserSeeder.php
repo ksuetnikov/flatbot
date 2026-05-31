@@ -13,9 +13,9 @@ class TelegramUserSeeder extends Seeder
     public function run(): void
     {
         DB::table('telegram_users')->updateOrInsert(
-            ['telegram_id' => 0],
+            ['registration_key' => '43'],
             [
-                'registration_key' => '43',
+                'telegram_id' => null,
                 'is_admin' => true,
                 'username' => 'kir_10rus',
                 'first_name' => null,

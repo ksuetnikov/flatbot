@@ -13,5 +13,7 @@ class SubscribeUserDTO extends BaseDTO
 {
     public function __construct(
         public string $name,
+        public ?string $registration_key = null,
+        public bool $regenerate_key = false,
     ) {}
 }

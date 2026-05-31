@@ -9,6 +9,9 @@ import axios from 'axios';
 interface Subscriber {
     id: number;
     name: string;
+    registrationKey?: string | null;
+    isRegistered?: boolean;
+    telegramUsername?: string | null;
     description?: string;
 }
 
@@ -105,7 +108,7 @@ export default function EditObject({ object, allSubscribers = [], allProperties 
         }
     };
 
-    const updateSubscriber = async (subscriber: Subscriber) => {
+    const updateSubscriber = async (subscriber: Subscriber, options?: { regenerateKey?: boolean }) => {
         if (!subscriber.name.trim()) return;
 
         setSavingSubscriberId(subscriber.id);
@@ -114,15 +117,26 @@ export default function EditObject({ object, allSubscribers = [], allProperties 
         try {
             const response = await axios.put(
                 `/objects/${object.id}/subscribers/${subscriber.id}`,
-                { name: subscriber.name },
+                {
+                    name: subscriber.name,
+                    registration_key: subscriber.registrationKey ?? undefined,
+                    regenerate_key: options?.regenerateKey ?? false,
+                },
                 jsonHeaders,
             );
 
             if (response.data?.data) {
                 setSubscribers(subscribers.map((s) => (s.id === subscriber.id ? response.data.data : s)));
             }
-        } catch {
-            setSubscriberError('Ошибка при сохранении подписчика');
+        } catch (error) {
+            if (axios.isAxiosError(error) && error.response?.status === 422) {
+                const errors = error.response.data.errors;
+                setSubscriberError(
+                    errors?.registration_key?.[0] || errors?.name?.[0] || 'Ошибка валидации',
+                );
+            } else {
+                setSubscriberError('Ошибка при сохранении подписчика');
+            }
         } finally {
             setSavingSubscriberId(null);
         }
@@ -203,8 +217,8 @@ export default function EditObject({ object, allSubscribers = [], allProperties 
         setProperties(properties.map((p) => (p.id === id ? { ...p, [field]: value } : p)));
     };
 
-    const patchSubscriber = (id: number, name: string) => {
-        setSubscribers(subscribers.map((s) => (s.id === id ? { ...s, name } : s)));
+    const patchSubscriber = (id: number, patch: Partial<Subscriber>) => {
+        setSubscribers(subscribers.map((s) => (s.id === id ? { ...s, ...patch } : s)));
     };
 
     const renderCounterRow = (
@@ -293,34 +307,67 @@ export default function EditObject({ object, allSubscribers = [], allProperties 
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Подписчики</label>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Укажите Telegram username (без @). Ключ регистрации подписчик вводит в боте при первом
+                                сообщении.
+                            </p>
                             <div className="mt-2 space-y-3">
                                 {subscribers.map((subscriber) => (
                                     <div
                                         key={subscriber.id}
-                                        className="flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 p-3"
+                                        className="space-y-3 rounded-lg border border-gray-200 p-3"
                                     >
-                                        <input
-                                            type="text"
-                                            value={subscriber.name}
-                                            onChange={(e) => patchSubscriber(subscriber.id, e.target.value)}
-                                            className="min-w-[200px] flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
-                                        />
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            disabled={savingSubscriberId === subscriber.id}
-                                            onClick={() => updateSubscriber(subscriber)}
-                                        >
-                                            {savingSubscriberId === subscriber.id ? 'Сохранение…' : 'Сохранить'}
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="destructive"
-                                            onClick={() => deleteSubscriber(subscriber.id)}
-                                        >
-                                            Удалить
-                                        </Button>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <input
+                                                type="text"
+                                                value={subscriber.name}
+                                                onChange={(e) => patchSubscriber(subscriber.id, { name: e.target.value })}
+                                                placeholder="Telegram username"
+                                                className="min-w-[180px] flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
+                                            />
+                                            <input
+                                                type="text"
+                                                value={subscriber.registrationKey ?? ''}
+                                                onChange={(e) =>
+                                                    patchSubscriber(subscriber.id, { registrationKey: e.target.value })
+                                                }
+                                                placeholder="Ключ регистрации"
+                                                disabled={subscriber.isRegistered}
+                                                className="min-w-[160px] flex-1 rounded-md border border-gray-300 px-3 py-2 font-mono text-sm disabled:bg-gray-100"
+                                            />
+                                            {subscriber.isRegistered ? (
+                                                <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800">
+                                                    Зарегистрирован
+                                                    {subscriber.telegramUsername ? ` (@${subscriber.telegramUsername})` : ''}
+                                                </span>
+                                            ) : (
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="outline"
+                                                    disabled={savingSubscriberId === subscriber.id}
+                                                    onClick={() => updateSubscriber(subscriber, { regenerateKey: true })}
+                                                >
+                                                    Новый ключ
+                                                </Button>
+                                            )}
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                disabled={savingSubscriberId === subscriber.id}
+                                                onClick={() => updateSubscriber(subscriber)}
+                                            >
+                                                {savingSubscriberId === subscriber.id ? 'Сохранение…' : 'Сохранить'}
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="destructive"
+                                                onClick={() => deleteSubscriber(subscriber.id)}
+                                            >
+                                                Удалить
+                                            </Button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -332,7 +379,7 @@ export default function EditObject({ object, allSubscribers = [], allProperties 
                                 type="text"
                                 value={newSubscriberName}
                                 onChange={(e) => setNewSubscriberName(e.target.value)}
-                                placeholder="Имя нового подписчика"
+                                placeholder="Telegram username нового подписчика"
                                 className="block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             />
                             <Button type="button" onClick={addSubscriber} disabled={isAddingSubscriber || !newSubscriberName.trim()}>
