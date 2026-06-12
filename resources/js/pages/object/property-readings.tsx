@@ -20,6 +20,7 @@ import {
     ArrowLeft,
     ExternalLink,
     History,
+    ImageIcon,
     LineChart,
     Paperclip,
     Pencil,
@@ -31,6 +32,12 @@ interface Reading {
     id: number;
     value: string;
     recorded_at: string;
+    photo?: {
+        id: number;
+        original_name: string;
+        mime_type: string | null;
+        url: string;
+    } | null;
 }
 
 interface PropertyFile {
@@ -590,6 +597,7 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
                                             <th className="px-6 py-3 font-medium">Дата</th>
                                             <th className="px-6 py-3 font-medium">Время</th>
                                             <th className="px-6 py-3 text-right font-medium">Показание</th>
+                                            <th className="px-6 py-3 font-medium">Фото</th>
                                             <th className="w-[100px] px-6 py-3 text-right font-medium">
                                                 Действия
                                             </th>
@@ -616,6 +624,21 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
                                                     </td>
                                                     <td className="px-6 py-3 text-right font-semibold tabular-nums">
                                                         {formatValue(reading.value)}
+                                                    </td>
+                                                    <td className="px-6 py-3">
+                                                        {reading.photo ? (
+                                                            <a
+                                                                href={reading.photo.url}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                                                            >
+                                                                <ImageIcon className="h-4 w-4" />
+                                                                {reading.photo.original_name}
+                                                            </a>
+                                                        ) : (
+                                                            <span className="text-muted-foreground">—</span>
+                                                        )}
                                                     </td>
                                                     <td className="px-6 py-3 text-right">
                                                         <Button

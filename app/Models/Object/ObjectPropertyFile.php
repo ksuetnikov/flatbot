@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Storage;
  *
  * @property int $id
  * @property int $object_property_id
+ * @property null|int $property_reading_id
+ * @property-read null|PropertyReading $propertyReading
  * @property string $disk
  * @property string $path
  * @property string $original_name
@@ -30,6 +32,7 @@ class ObjectPropertyFile extends Model
 
     protected $fillable = [
         'object_property_id',
+        'property_reading_id',
         'disk',
         'path',
         'original_name',
@@ -56,6 +59,11 @@ class ObjectPropertyFile extends Model
     public function objectProperty(): BelongsTo
     {
         return $this->belongsTo(ObjectProperty::class, 'object_property_id', 'id');
+    }
+
+    public function propertyReading(): BelongsTo
+    {
+        return $this->belongsTo(PropertyReading::class, 'property_reading_id', 'id');
     }
 
     /** Публичный URL через симлинк storage (если выполнен `php artisan storage:link`). */

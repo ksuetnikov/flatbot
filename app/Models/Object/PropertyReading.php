@@ -6,6 +6,7 @@ namespace App\Models\Object;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -38,5 +39,10 @@ class PropertyReading extends Model
     public function objectProperty(): BelongsTo
     {
         return $this->belongsTo(ObjectProperty::class, 'object_property_id', 'id');
+    }
+
+    public function photo(): HasOne
+    {
+        return $this->hasOne(ObjectPropertyFile::class, 'property_reading_id', 'id');
     }
 }

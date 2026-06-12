@@ -9,6 +9,7 @@ use App\Http\Requests\Object\UpdateObjectRequest;
 use App\Models\Object\ObjectModel;
 use App\Services\Object\ObjectFinanceSummaryService;
 use App\Services\Object\ObjectService;
+use App\Services\Object\ReadingSubmissionStatusService;
 use App\Services\SubscribeUser\SubscribeUserService;
 use Auth;
 use Illuminate\Http\RedirectResponse;
@@ -24,6 +25,7 @@ class ObjectController extends Controller
         private readonly ObjectService $objectService,
         private readonly ObjectFinanceSummaryService $financeSummaryService,
         private readonly SubscribeUserService $subscribeUserService,
+        private readonly ReadingSubmissionStatusService $readingSubmissionStatusService,
     ) {
     }
 
@@ -61,6 +63,7 @@ class ObjectController extends Controller
                         'recorded_at' => $property->latestReading->recorded_at,
                     ] : null,
                 ]),
+                'reading_status' => $this->readingSubmissionStatusService->forObject($object),
             ],
         ]);
     }

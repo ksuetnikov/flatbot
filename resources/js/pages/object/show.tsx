@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { Gauge, Settings2, Users, Wallet } from 'lucide-react';
+import { Bell, CheckCircle2, Gauge, Settings2, Users, Wallet, XCircle } from 'lucide-react';
 
 interface LatestReading {
     value: string;
@@ -26,6 +26,24 @@ interface FinanceSummary {
     entries_count: number;
 }
 
+interface ReadingStatus {
+    period_label: string;
+    is_complete: boolean;
+    submitted_count: number;
+    total_count: number;
+    missing_properties: string[];
+    properties: Array<{
+        id: number;
+        name: string;
+        submitted_this_month: boolean;
+    }>;
+    subscribers: Array<{
+        id: number;
+        name: string;
+        is_registered: boolean;
+    }>;
+}
+
 interface ObjectShowProps {
     object: {
         id: number;
@@ -36,6 +54,7 @@ interface ObjectShowProps {
         subscribers: Array<{ id: number; name: string }>;
         finance_summary: FinanceSummary;
         properties: PropertySummary[];
+        reading_status: ReadingStatus;
     };
 }
 
@@ -104,6 +123,61 @@ export default function ObjectShow({ object }: ObjectShowProps) {
                         </CardHeader>
                     </Card>
                 </div>
+
+                <Card>
+                    <CardHeader className="pb-3">
+                        <CardDescription className="flex items-center gap-2">
+                            <Bell className="h-4 w-4" />
+                            Показания за {object.reading_status.period_label}
+                        </CardDescription>
+                        <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
+                            {object.reading_status.is_complete ? (
+                                <>
+                                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                                    Все счётчики сданы
+                                </>
+                            ) : (
+                                <>
+                                    <XCircle className="h-5 w-5 text-amber-600" />
+                                    Сдано {object.reading_status.submitted_count} из {object.reading_status.total_count}
+                                </>
+                            )}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3 text-sm">
+                        {!object.reading_status.is_complete && object.reading_status.missing_properties.length > 0 && (
+                            <p className="text-muted-foreground">
+                                Не сданы:{' '}
+                                <span className="font-medium text-foreground">
+                                    {object.reading_status.missing_properties.join(', ')}
+                                </span>
+                            </p>
+                        )}
+                        {object.notification_date && (
+                            <p className="text-muted-foreground">
+                                Telegram-напоминания арендаторам отправляются по расписанию из настроек объекта.
+                            </p>
+                        )}
+                        {!object.notification_date && (
+                            <p className="text-muted-foreground">
+                                Укажите дату уведомлений в настройках — бот будет напоминать арендаторам о показаниях.
+                            </p>
+                        )}
+                        {object.reading_status.subscribers.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {object.reading_status.subscribers.map((subscriber) => (
+                                    <Badge
+                                        key={subscriber.id}
+                                        variant={subscriber.is_registered ? 'secondary' : 'outline'}
+                                    >
+                                        @{subscriber.name}
+                                        {subscriber.is_registered ? ' · в боте' : ' · не зарегистрирован'}
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
 
                 <div>
                     <h2 className="mb-4 text-lg font-semibold">Показания счётчиков</h2>

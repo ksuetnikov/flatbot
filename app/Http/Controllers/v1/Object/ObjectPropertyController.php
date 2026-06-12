@@ -56,7 +56,7 @@ class ObjectPropertyController extends Controller
     {
         $property = ObjectProperty::query()
             ->where('object_id', $object->getKey())
-            ->with(['readings', 'files'])
+            ->with(['readings.photo', 'files'])
             ->findOrFail($propertyId);
 
         return Inertia::render('object/property-readings', [
@@ -73,6 +73,12 @@ class ObjectPropertyController extends Controller
                     'id' => $reading->id,
                     'value' => $reading->value,
                     'recorded_at' => $reading->recorded_at,
+                    'photo' => $reading->photo ? [
+                        'id' => $reading->photo->id,
+                        'original_name' => $reading->photo->original_name,
+                        'mime_type' => $reading->photo->mime_type,
+                        'url' => route('property.files.show', [$object->id, $property->id, $reading->photo->id]),
+                    ] : null,
                 ]),
                 'files' => $property->files->map(fn ($file) => [
                     'id' => $file->id,
