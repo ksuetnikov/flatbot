@@ -12,31 +12,29 @@ export const DEFAULT_NOTIFICATION_PARTS: MonthlyNotificationParts = {
     minute: 0,
 };
 
+const WALL_CLOCK_RE = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/;
+
+/** День и время из строки БД/API без учёта часового пояса */
+export function extractWallClock(value: string): MonthlyNotificationParts | null {
+    const match = value.match(WALL_CLOCK_RE);
+    if (!match) {
+        return null;
+    }
+
+    return {
+        day: Number(match[3]),
+        hour: Number(match[4]),
+        minute: Number(match[5]),
+    };
+}
+
 /** Разбор сохранённой даты — для UI берём только число месяца и время */
 export function parseMonthlyNotification(value: string | null | undefined): MonthlyNotificationParts | null {
     if (!value) {
         return null;
     }
 
-    let d: Date;
-    if (value.includes('T') && !value.endsWith('Z') && !/[+-]\d{2}:\d{2}$/.test(value)) {
-        const [datePart, timePart] = value.split('T');
-        const [y, m, day] = datePart.split('-').map(Number);
-        const [hour, minute] = timePart.split(':').map(Number);
-        d = new Date(y, m - 1, day, hour, minute);
-    } else {
-        d = new Date(value);
-    }
-
-    if (Number.isNaN(d.getTime())) {
-        return null;
-    }
-
-    return {
-        day: d.getDate(),
-        hour: d.getHours(),
-        minute: d.getMinutes(),
-    };
+    return extractWallClock(value);
 }
 
 /**
@@ -51,12 +49,10 @@ export function buildMonthlyNotificationLocal(
     let year = now.getFullYear();
     let month = now.getMonth();
 
-    if (referenceIso) {
-        const ref = new Date(referenceIso);
-        if (!Number.isNaN(ref.getTime())) {
-            year = ref.getFullYear();
-            month = ref.getMonth();
-        }
+    const ym = referenceIso?.match(/^(\d{4})-(\d{2})/);
+    if (ym) {
+        year = Number(ym[1]);
+        month = Number(ym[2]) - 1;
     }
 
     const maxDay = new Date(year, month + 1, 0).getDate();
@@ -78,12 +74,11 @@ export function toDatetimeLocalValue(iso: string | null | undefined): string {
     if (!iso) {
         return '';
     }
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) {
+
+    const parts = parseMonthlyNotification(iso);
+    if (!parts) {
         return '';
     }
-    return buildMonthlyNotificationLocal(
-        { day: d.getDate(), hour: d.getHours(), minute: d.getMinutes() },
-        iso,
-    );
+
+    return buildMonthlyNotificationLocal(parts, iso);
 }

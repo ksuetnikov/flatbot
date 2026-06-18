@@ -78,6 +78,22 @@ class PropertyReadingController extends Controller
         return redirect()->back()->with('success', 'Показание обновлено');
     }
 
+    public function destroy(
+        ObjectModel $object,
+        int $propertyId,
+        int $readingId,
+    ): RedirectResponse {
+        $this->assertPropertyBelongsToObject($object, $propertyId);
+
+        $reading = PropertyReading::query()
+            ->where('object_property_id', $propertyId)
+            ->findOrFail($readingId);
+
+        $this->propertyReadingService->deleteReading($reading);
+
+        return redirect()->back()->with('success', 'Показание удалено');
+    }
+
     private function assertPropertyBelongsToObject(ObjectModel $object, int $propertyId): void
     {
         $this->findPropertyForObject($object, $propertyId);

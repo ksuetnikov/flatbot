@@ -66,6 +66,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/objects/{object}/properties/{propertyId}/readings/export', [PropertyReadingController::class, 'export'])->name('property.readings.export');
     Route::post('/objects/{object}/properties/{propertyId}/readings', [PropertyReadingController::class, 'store'])->name('property.readings.store');
     Route::put('/objects/{object}/properties/{propertyId}/readings/{readingId}', [PropertyReadingController::class, 'update'])->name('property.readings.update');
+    Route::delete('/objects/{object}/properties/{propertyId}/readings/{readingId}', [PropertyReadingController::class, 'destroy'])->name('property.readings.destroy');
     Route::post('/objects/{object}/properties', [ObjectPropertyController::class, 'create'])->name('property.create');
     Route::put('/objects/{object}/properties/{propertyId}', [ObjectPropertyController::class, 'update'])->name('property.update');
     Route::delete('/objects/{object}/properties/{propertyId}', [ObjectPropertyController::class, 'destroy'])->name('property.destroy');

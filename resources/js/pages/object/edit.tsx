@@ -3,6 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { NotificationDatePicker } from '@/components/ui/notification-date-picker';
 import { buildMonthlyNotificationLocal, parseMonthlyNotification } from '@/lib/notification-schedule';
+import { X } from 'lucide-react';
 import { useState } from 'react';
 import axios from 'axios';
 
@@ -361,11 +362,13 @@ export default function EditObject({ object, allSubscribers = [], allProperties 
                                             </Button>
                                             <Button
                                                 type="button"
-                                                size="sm"
-                                                variant="destructive"
+                                                size="icon"
+                                                variant="ghost"
+                                                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                                                 onClick={() => deleteSubscriber(subscriber.id)}
+                                                title="Удалить подписчика"
                                             >
-                                                Удалить
+                                                <X className="h-4 w-4" />
                                             </Button>
                                         </div>
                                     </div>
@@ -408,10 +411,13 @@ export default function EditObject({ object, allSubscribers = [], allProperties 
                                                 </Button>
                                                 <Button
                                                     type="button"
-                                                    variant="destructive"
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                                                     onClick={() => deleteProperty(property.id)}
+                                                    title="Удалить счётчик"
                                                 >
-                                                    Удалить
+                                                    <X className="h-4 w-4" />
                                                 </Button>
                                             </>,
                                             property.value,

@@ -16,6 +16,9 @@ use Illuminate\Support\Carbon;
  * @property int $period_year
  * @property int $period_month
  * @property string $reminder_type
+ * @property int $schedule_day
+ * @property int $schedule_hour
+ * @property int $schedule_minute
  * @property Carbon $sent_at
  */
 class ReadingReminderLog extends Model
@@ -32,6 +35,9 @@ class ReadingReminderLog extends Model
         'period_year',
         'period_month',
         'reminder_type',
+        'schedule_day',
+        'schedule_hour',
+        'schedule_minute',
         'sent_at',
     ];
 
@@ -40,6 +46,9 @@ class ReadingReminderLog extends Model
         return [
             'period_year' => 'integer',
             'period_month' => 'integer',
+            'schedule_day' => 'integer',
+            'schedule_hour' => 'integer',
+            'schedule_minute' => 'integer',
             'sent_at' => 'datetime',
         ];
     }

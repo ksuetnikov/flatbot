@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\Object;
 
+use App\Casts\MonthlyNotificationSchedule;
 use App\Models\SubscribeUser\SubscribeUser;
 use App\Models\User;
 use Eloquent;
@@ -25,7 +26,7 @@ use Illuminate\Support\Carbon;
  * @property int $user_id Идентификатор пользователя
  * @property string $name Наименование объекта
  * @property null|string $description Описание объекта
- * @property null|Carbon $notification_date Временная метка уведомления пользователя
+ * @property null|string $notification_date Ежемесячное расписание уведомлений (день + время)
  * @property null|Carbon $created_at Дата создания
  * @property null|Carbon $updated_at Дата обновления
  * @property null|Carbon $deleted_at Дата удаления
@@ -57,8 +58,19 @@ class ObjectModel extends Model
     protected function casts(): array
     {
         return [
-            'notification_date' => 'datetime',
+            'notification_date' => MonthlyNotificationSchedule::class,
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::updated(function (self $object): void {
+            if ($object->wasChanged('notification_date')) {
+                ReadingReminderLog::query()
+                    ->where('object_id', $object->id)
+                    ->delete();
+            }
+        });
     }
 
     /**

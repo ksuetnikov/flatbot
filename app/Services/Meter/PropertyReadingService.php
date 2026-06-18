@@ -37,6 +37,18 @@ class PropertyReadingService
         return $reading->fresh();
     }
 
+    public function deleteReading(PropertyReading $reading): void
+    {
+        $objectPropertyId = $reading->object_property_id;
+
+        $reading->load('photo');
+        $reading->photo?->delete();
+
+        $reading->delete();
+
+        $this->syncLatestValueToProperty($objectPropertyId);
+    }
+
     private function syncLatestValueToProperty(int $objectPropertyId): void
     {
         $property = ObjectProperty::query()->find($objectPropertyId);

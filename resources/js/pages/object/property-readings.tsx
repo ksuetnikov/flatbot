@@ -25,6 +25,7 @@ import {
     Paperclip,
     Pencil,
     Trash2,
+    X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -238,6 +239,15 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
             return;
         }
         router.delete(route('property.files.destroy', [object.id, property.id, file.id]), {
+            preserveScroll: true,
+        });
+    };
+
+    const confirmDeleteReading = (reading: Reading) => {
+        if (!confirm(`Удалить показание ${formatValue(reading.value)} от ${formatDateTime(reading.recorded_at)}?`)) {
+            return;
+        }
+        router.delete(route('property.readings.destroy', [object.id, property.id, reading.id]), {
             preserveScroll: true,
         });
     };
@@ -598,7 +608,7 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
                                             <th className="px-6 py-3 font-medium">Время</th>
                                             <th className="px-6 py-3 text-right font-medium">Показание</th>
                                             <th className="px-6 py-3 font-medium">Фото</th>
-                                            <th className="w-[100px] px-6 py-3 text-right font-medium">
+                                            <th className="w-[88px] px-6 py-3 text-right font-medium">
                                                 Действия
                                             </th>
                                         </tr>
@@ -641,15 +651,28 @@ export default function PropertyReadings({ object, property }: PropertyReadingsP
                                                         )}
                                                     </td>
                                                     <td className="px-6 py-3 text-right">
-                                                        <Button
-                                                            type="button"
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => openEdit(reading)}
-                                                        >
-                                                            <Pencil className="mr-1 h-4 w-4" />
-                                                            Изменить
-                                                        </Button>
+                                                        <div className="flex items-center justify-end gap-1">
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8"
+                                                                onClick={() => openEdit(reading)}
+                                                                title="Изменить"
+                                                            >
+                                                                <Pencil className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                                                onClick={() => confirmDeleteReading(reading)}
+                                                                title="Удалить"
+                                                            >
+                                                                <X className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             );
