@@ -7,18 +7,20 @@ namespace App\Models\TelegramUser;
 use App\Models\SubscribeUser\SubscribeUser;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
 
 /**
  * Слот регистрации / аккаунт пользователя Telegram-бота.
  *
- * @property int $id
- * @property int|null $telegram_id
- * @property string|null $first_name
- * @property string|null $username
- * @property string|null $registration_key
- * @property string $state
- * @property bool $is_admin
- * @property \Illuminate\Support\Carbon|null $created_at
+ * @property int $id Идентификатор слота
+ * @property int|null $telegram_id Идентификатор пользователя Telegram. null, пока ключ не активирован
+ * @property string|null $first_name Имя из Telegram. Заполняет бот
+ * @property string|null $username Username из Telegram. Заполняет бот
+ * @property string|null $registration_key Ключ, который панель выдаёт подписчику
+ * @property string $state Состояние диалога бота. Панель при создании пишет main_menu
+ * @property bool $is_admin Флаг администратора бота. Панель при создании подписчика пишет false
+ * @property Carbon|null $created_at Дата создания слота
+ * @property-read SubscribeUser|null $subscribeUser Подписчик панели, связанный с этим слотом
  */
 class TelegramUser extends Model
 {
@@ -45,11 +47,19 @@ class TelegramUser extends Model
         ];
     }
 
+    /**
+     * Ключ уже обменяли на аккаунт Telegram.
+     */
     public function isRegistered(): bool
     {
         return $this->telegram_id !== null;
     }
 
+    /**
+     * Подписчик панели, которому выдан этот слот.
+     *
+     * @return HasOne<SubscribeUser, $this>
+     */
     public function subscribeUser(): HasOne
     {
         return $this->hasOne(SubscribeUser::class, 'telegram_user_id', 'id');

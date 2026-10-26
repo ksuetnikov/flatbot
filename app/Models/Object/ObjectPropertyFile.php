@@ -7,22 +7,24 @@ namespace App\Models\Object;
 use Eloquent;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 /**
  * Файл, прикреплённый к свойству объекта (счётчику).
  *
- * @property int $id
- * @property int $object_property_id
- * @property null|int $property_reading_id
- * @property-read null|PropertyReading $propertyReading
- * @property string $disk
- * @property string $path
- * @property string $original_name
- * @property null|string $mime_type
- * @property int $size
- *
- * @property-read ObjectProperty $objectProperty
+ * @property int $id Идентификатор файла
+ * @property int $object_property_id Идентификатор счётчика, object_properties.id
+ * @property int|null $property_reading_id Показание, если это его фото. Пусто у вложения счётчика
+ * @property string $disk Имя диска Laravel, для новых файлов public
+ * @property string $path Путь на диске
+ * @property string $original_name Имя файла, которое видит пользователь
+ * @property string|null $mime_type MIME-тип
+ * @property int $size Размер в байтах
+ * @property Carbon|null $created_at Дата загрузки
+ * @property Carbon|null $updated_at Дата изменения
+ * @property-read ObjectProperty $objectProperty Счётчик
+ * @property-read PropertyReading|null $propertyReading Показание, к которому привязано фото
  *
  * @mixin Eloquent
  */
@@ -56,11 +58,21 @@ class ObjectPropertyFile extends Model
         });
     }
 
+    /**
+     * Счётчик, к которому прикреплён файл.
+     *
+     * @return BelongsTo<ObjectProperty, $this>
+     */
     public function objectProperty(): BelongsTo
     {
         return $this->belongsTo(ObjectProperty::class, 'object_property_id', 'id');
     }
 
+    /**
+     * Показание, если файл — его фото.
+     *
+     * @return BelongsTo<PropertyReading, $this>
+     */
     public function propertyReading(): BelongsTo
     {
         return $this->belongsTo(PropertyReading::class, 'property_reading_id', 'id');

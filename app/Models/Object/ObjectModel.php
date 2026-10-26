@@ -22,20 +22,22 @@ use Illuminate\Support\Carbon;
  * Модель объектов - создаваемые пользователем сущности
  *
  * @property int $id Идентификатор
- * @property float $order Индекс сортировки
- * @property int $user_id Идентификатор пользователя
+ * @property string $order Индекс сортировки, decimal(30, 10). Без cast Eloquent возвращает строку
+ * @property int|null $user_id Идентификатор пользователя панели, users.id
  * @property string $name Наименование объекта
- * @property null|string $description Описание объекта
- * @property null|string $notification_date Ежемесячное расписание уведомлений (день + время)
- * @property null|Carbon $created_at Дата создания
- * @property null|Carbon $updated_at Дата обновления
- * @property null|Carbon $deleted_at Дата удаления
+ * @property string|null $description Описание объекта
+ * @property string|null $notification_date Ежемесячное расписание уведомлений: день и время, каст MonthlyNotificationSchedule
+ * @property string|null $user_code Код пользователя в Telegram. Панель это поле не заполняет
+ * @property string|null $bot_properties JSON свойств для Telegram-бота. Панель это поле не заполняет
+ * @property Carbon|null $created_at Дата создания
+ * @property Carbon|null $updated_at Дата обновления
+ * @property Carbon|null $deleted_at Колонка есть, мягкое удаление не включено
+ * @property-read User $user Пользователь, создавший объект
+ * @property-read Collection<int, SubscribeUser> $subscribers Подписчики объекта
+ * @property-read Collection<int, ObjectProperty> $properties Счётчики объекта
+ * @property-read Collection<int, ObjectFinanceEntry> $financeEntries Доходы и расходы
  *
- * @method static Builder|self query()
- * @property-read Collection<SubscribeUser> $subscribers Подписчики
- * @property-read Collection<ObjectProperty> $properties Свойства
- * @property-read Collection<ObjectFinanceEntry> $financeEntries Финансы
- * @property-read User $user Пользователь
+ * @method static Builder<self>|self query()
  *
  * @mixin Eloquent
  */
@@ -74,7 +76,9 @@ class ObjectModel extends Model
     }
 
     /**
-     * Пользователь, создавший данный объект
+     * Пользователь панели, которому принадлежит объект.
+     *
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {
@@ -82,7 +86,9 @@ class ObjectModel extends Model
     }
 
     /**
-     * Подписчики объекта
+     * Подписчики объекта.
+     *
+     * @return HasMany<SubscribeUser, $this>
      */
     public function subscribers(): HasMany
     {
@@ -90,7 +96,9 @@ class ObjectModel extends Model
     }
 
     /**
-     * Свойства объекта
+     * Счётчики объекта.
+     *
+     * @return HasMany<ObjectProperty, $this>
      */
     public function properties(): HasMany
     {
@@ -98,7 +106,9 @@ class ObjectModel extends Model
     }
 
     /**
-     * Записи доходов и расходов
+     * Доходы и расходы объекта.
+     *
+     * @return HasMany<ObjectFinanceEntry, $this>
      */
     public function financeEntries(): HasMany
     {

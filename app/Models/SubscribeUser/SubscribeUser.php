@@ -17,15 +17,15 @@ use Illuminate\Support\Carbon;
  *
  * Подписчики на объекты
  *
- * @property int $id Идентификатор
- * @property float $order Индекс сортировки
- * @property int $object_id Идентификатор объекта
- * @property null|int $telegram_user_id Слот регистрации в Telegram
- * @property string $name Telegram username подписчика (без @)
- * @property null|string $description Описание подписчика
- * @property null|Carbon $created_at Дата создания
- * @property null|Carbon $updated_at Дата обновления
- * @property null|Carbon $deleted_at Дата удаления
+ * @property int $id Идентификатор подписчика
+ * @property string $order Индекс сортировки, decimal(30, 10). Без cast Eloquent возвращает строку
+ * @property int|null $object_id Идентификатор объекта, objects.id
+ * @property int|null $telegram_user_id Слот регистрации, telegram_users.id
+ * @property string $name Telegram username подписчика без @
+ * @property string|null $description Описание. Форма панели его не заполняет
+ * @property Carbon|null $created_at Дата создания
+ * @property Carbon|null $updated_at Дата обновления
+ * @property Carbon|null $deleted_at Колонка есть, мягкое удаление не включено
  *
  * @method static Builder|self query()
  *
@@ -40,17 +40,24 @@ class SubscribeUser extends Model
     public $table = 'subscribe_users';
 
     protected $fillable = [
-        'name'
+        'name',
     ];
 
     /**
-     * Объект, на который подписан подписчик
+     * Объект, к которому привязан подписчик.
+     *
+     * @return BelongsTo<ObjectModel, $this>
      */
     public function object(): BelongsTo
     {
         return $this->belongsTo(ObjectModel::class, 'object_id', 'id');
     }
 
+    /**
+     * Слот регистрации в Telegram-боте.
+     *
+     * @return BelongsTo<TelegramUser, $this>
+     */
     public function telegramUser(): BelongsTo
     {
         return $this->belongsTo(TelegramUser::class, 'telegram_user_id', 'id');

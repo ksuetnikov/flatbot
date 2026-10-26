@@ -6,8 +6,6 @@ use App\Http\Controllers\v1\Object\ObjectPropertyController;
 use App\Http\Controllers\v1\Object\ObjectPropertyFileController;
 use App\Http\Controllers\v1\Object\PropertyReadingController;
 use App\Http\Controllers\v1\SubscribeUser\SubscribeUserController;
-use App\Models\User;
-use App\Services\Object\ObjectFinanceSummaryService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -21,29 +19,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    // Dashboard route
-    Route::get('dashboard', function (ObjectFinanceSummaryService $financeSummaryService) {
-        $user = Auth::user();
-        $objects = $user->objects;
-        $summaries = $financeSummaryService->summariesForObjects($objects);
-
-        return Inertia::render('dashboard', [
-            'objects' => $objects->map(static fn ($object) => [
-                'id' => $object->id,
-                'name' => $object->name,
-                'description' => $object->description,
-                'notification_date' => $object->notification_date,
-                'created_at' => $object->created_at,
-                'updated_at' => $object->updated_at,
-                'finance_summary' => $summaries[$object->id] ?? [
-                    'total_income' => 0,
-                    'total_expense' => 0,
-                    'balance' => 0,
-                    'entries_count' => 0,
-                ],
-            ]),
-        ]);
-    })->name('dashboard');
+    Route::get('dashboard', [ObjectController::class, 'dashboard'])->name('dashboard');
 
     // Object routes
     Route::post('/objects', [ObjectController::class, 'create'])->name('object.create');
@@ -52,12 +28,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/objects/{object}', [ObjectController::class, 'update'])->name('object.update');
     Route::delete('/objects/{object}', [ObjectController::class, 'destroy'])->name('object.destroy');
 
-    //Subscribers
+    // Subscribers
     Route::post('/objects/{object}/subscribers', [SubscribeUserController::class, 'create'])->name('subscriber.create');
     Route::put('/objects/{object}/subscribers/{subscriberId}', [SubscribeUserController::class, 'update'])->name('subscriber.update');
     Route::delete('/objects/{object}/subscribers/{subscriberId}', [SubscribeUserController::class, 'destroy'])->name('subscriber.destroy');
 
-    //Object properties
+    // Object properties
     Route::get('/objects/{object}/properties/{propertyId}', [ObjectPropertyController::class, 'show'])->name('property.show');
     Route::get('/objects/{object}/properties/{propertyId}/files/{fileId}', [ObjectPropertyFileController::class, 'show'])->name('property.files.show');
     Route::post('/objects/{object}/properties/{propertyId}/files', [ObjectPropertyFileController::class, 'store'])->name('property.files.store');
@@ -78,7 +54,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/objects/{object}/finances/{entryId}', [ObjectFinanceController::class, 'destroy'])->name('object.finances.destroy');
 
 });
-
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

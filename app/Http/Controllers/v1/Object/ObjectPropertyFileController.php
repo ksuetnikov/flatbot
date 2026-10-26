@@ -10,46 +10,49 @@ use App\Http\Requests\Object\UpdateObjectPropertyFileRequest;
 use App\Models\Object\ObjectModel;
 use App\Models\Object\ObjectProperty;
 use App\Models\Object\ObjectPropertyFile;
+use App\Services\Object\ObjectPropertyFileService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ObjectPropertyFileController extends Controller
 {
+    public function __construct(
+        private readonly ObjectPropertyFileService $objectPropertyFileService,
+    ) {}
+
     public function store(
         StoreObjectPropertyFileRequest $request,
         ObjectModel $object,
         int $propertyId,
     ): RedirectResponse {
-        $this->assertPropertyBelongsToObject($object, $propertyId);
-
+        $property = $this->propertyForObject($object, $propertyId);
         $uploaded = $request->file('file');
-        $path = $uploaded->store("property-files/{$propertyId}", 'public');
-        if ($path === false || ! Storage::disk('public')->exists($path)) {
-            return redirect()->back()->withErrors([
-                'file' => 'Не удалось сохранить файл в storage. Проверьте права на каталог storage/app/public.',
-            ]);
+
+        if (! $uploaded instanceof UploadedFile) {
+            return $this->storageFailed();
         }
 
-        ObjectPropertyFile::query()->create([
-            'object_property_id' => $propertyId,
-            'disk' => 'public',
-            'path' => $path,
-            'original_name' => $uploaded->getClientOriginalName(),
-            'mime_type' => $uploaded->getClientMimeType(),
-            'size' => $uploaded->getSize(),
-        ]);
+        try {
+            $this->objectPropertyFileService->store($property, $uploaded);
+        } catch (RuntimeException) {
+            return $this->storageFailed();
+        }
 
         return redirect()->back()->with('success', 'Файл прикреплён');
     }
 
-    /** Скачать / открыть вложение (только для авторизованных). */
+    /**
+     * Скачать или открыть вложение.
+     */
     public function show(
         ObjectModel $object,
         int $propertyId,
         int $fileId,
     ): StreamedResponse {
-        $this->assertPropertyBelongsToObject($object, $propertyId);
+        $this->propertyForObject($object, $propertyId);
 
         $file = ObjectPropertyFile::query()
             ->where('object_property_id', $propertyId)
@@ -72,7 +75,7 @@ class ObjectPropertyFileController extends Controller
         int $propertyId,
         int $fileId,
     ): RedirectResponse {
-        $this->assertPropertyBelongsToObject($object, $propertyId);
+        $this->propertyForObject($object, $propertyId);
 
         $file = ObjectPropertyFile::query()
             ->where('object_property_id', $propertyId)
@@ -90,7 +93,7 @@ class ObjectPropertyFileController extends Controller
         int $propertyId,
         int $fileId,
     ): RedirectResponse {
-        $this->assertPropertyBelongsToObject($object, $propertyId);
+        $this->propertyForObject($object, $propertyId);
 
         $file = ObjectPropertyFile::query()
             ->where('object_property_id', $propertyId)
@@ -101,11 +104,18 @@ class ObjectPropertyFileController extends Controller
         return redirect()->back();
     }
 
-    private function assertPropertyBelongsToObject(ObjectModel $object, int $propertyId): void
+    private function propertyForObject(ObjectModel $object, int $propertyId): ObjectProperty
     {
-        ObjectProperty::query()
-            ->where('object_id', $object->getKey())
+        return ObjectProperty::query()
+            ->where('object_id', $object->id)
             ->whereKey($propertyId)
             ->firstOrFail();
+    }
+
+    private function storageFailed(): RedirectResponse
+    {
+        return redirect()->back()->withErrors([
+            'file' => 'Не удалось сохранить файл в storage. Проверьте права на каталог storage/app/public.',
+        ]);
     }
 }

@@ -13,6 +13,7 @@ GoFlat — Laravel 12.20.0 панель учёта объектов недвиж
 - Вход: `bootstrap/app.php`, `routes/web.php`, `routes/api/api.php`.
 - Страницы Inertia: `resources/js/pages`. Настройки объекта дополнительно вызывают JSON с этой же сессии через axios (`object/edit.tsx`).
 - Доменная логика в `app/Services`, не в моделях. Модели тонкие, кроме каста расписания и удаления журнала напоминаний при смене `notification_date`.
+- Страницы дашборда, карточки и настроек объекта собирает `ObjectPageService`. Финансовые записи и их группировку — `ObjectFinanceEntryService`. Запись файла панели и фото показания — `ObjectPropertyFileService`. Контроллеры этих экранов возвращают Inertia или редирект.
 - Показания пишет один сервис: `app/Services/Meter/PropertyReadingService.php`. Им пользуются и панель, и `MeterController`.
 - Очередь, события и планировщик домена фактически не работают: событие обновления объекта никто не диспатчит, `Schedule` нет.
 
@@ -22,12 +23,12 @@ GoFlat — Laravel 12.20.0 панель учёта объектов недвиж
 
 | Задача | Сначала открыть |
 | --- | --- |
-| Объект, карточка, дашборд | `routes/web.php`, `ObjectController`, `ObjectService`, `resources/js/pages/dashboard.tsx`, `object/show.tsx` |
+| Объект, карточка, дашборд | `ObjectController`, `ObjectPageService`, `app/Services/Object/Data`, `resources/js/pages/dashboard.tsx`, `object/show.tsx`, `object/edit.tsx` |
 | Подписчик и ключ бота | `SubscribeUserController`, `SubscribeUserService`, `UpdateSubscribeUserRequest`, `TelegramUser`, `object/edit.tsx` |
 | Счётчик | `ObjectPropertyController`, `ObjectPropertyService`, `CreateObjectPropertyRequest` |
 | Показания | `PropertyReadingController`, `PropertyReadingService`, `property-readings.tsx`, для внешнего входа ещё `MeterController` |
-| Файлы и фото | `ObjectPropertyFileController`, `ObjectPropertyFileService`, модель `ObjectPropertyFile` |
-| Финансы и Excel | `ObjectFinanceController`, `app/Services/Export`, `ExportPeriodRequest`, `finances.tsx` |
+| Файлы и фото | `ObjectPropertyFileController`, `ObjectPropertyFileService`, `MeterController`, модель `ObjectPropertyFile` |
+| Финансы и Excel | `ObjectFinanceController`, `ObjectFinanceEntryService`, `app/Services/Export`, `ExportPeriodRequest`, `finances.tsx` |
 | Расписание напоминаний | `MonthlyNotificationSchedule`, `resources/js/lib/notification-schedule.ts`, `ReadingReminderLog`, `ObjectModel::booted` |
 | Доступ | middleware в `routes/web.php` и `bootstrap/app.php`, закомментированные `authorize`, `ObjectModelPolicy` |
 | Схема | `database/migrations`, `DATABASE.md` |

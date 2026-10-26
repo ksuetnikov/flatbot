@@ -24,7 +24,8 @@
 | `app/Http/Controllers/v1/Meter` | JSON-приём показаний и фото |
 | `app/Http/Controllers/v1/SubscribeUser` | JSON CRUD подписчиков |
 | `app/Http/Requests` | Валидация. `BaseRequest::authorize()` всегда `true` |
-| `app/Services/Object` | Объекты, счётчики, файлы показаний, статус сдачи, сводка финансов, постановка устаревшей очереди |
+| `app/Services/Object` | Сценарии объектов, счётчиков, файлов, финансов и сборка страниц Inertia |
+| `app/Services/Object/Data` | Типизированные данные страниц. В JSON уходят через `toArray()` |
 | `app/Services/Meter` | Запись, правка, удаление показаний и синхронизация `object_properties.value` |
 | `app/Services/SubscribeUser` | Подписчик и слот `telegram_users` |
 | `app/Services/Export` | XLSX через PhpSpreadsheet |
@@ -44,15 +45,15 @@
 
 ### Страница дашборда
 
-`GET /dashboard` → замыкание в `routes/web.php` → `Auth::user()->objects` → `ObjectFinanceSummaryService::summariesForObjects` → Inertia `dashboard`.
+`GET /dashboard` → `ObjectController::dashboard` → `ObjectPageService::dashboardObjects` → Inertia `dashboard`.
 
 `POST /objects` → `ObjectController::create` → `ObjectService::create` → редирект на карточку. Имя фиксировано: `Новый объект`, `order = 1`, `user_id` текущего пользователя.
 
 ### Карточка и настройки
 
-`GET /objects/{object}` → `ObjectController::show`. Грузит подписчиков, счётчики и `latestReading`, считает финансы и `ReadingSubmissionStatusService::forObject`.
+`GET /objects/{object}` → `ObjectController::show` → `ObjectPageService::show`. Сервис грузит подписчиков, счётчики и `latestReading`, считает финансы и `ReadingSubmissionStatusService::forObject`. Контроллер только вызывает `Inertia::render`.
 
-`GET /objects/{object}/edit` → перед отрисовкой `SubscribeUserService::backfillTelegramUsers`: подписчикам без `telegram_user_id` создаётся слот. Страница `object/edit`.
+`GET /objects/{object}/edit` → `ObjectController::edit` → `ObjectPageService::edit`. Сервис вызывает `SubscribeUserService::backfillTelegramUsers` для подписчиков без слота Telegram и собирает `ObjectEditData`.
 
 `PUT /objects/{object}` — Inertia-форма: имя, описание, `notification_date`. Сохранение модели само удаляет `reading_reminder_logs` этого объекта, если расписание изменилось (`ObjectModel::booted`).
 
@@ -71,9 +72,9 @@
 
 Показания панели идут в `PropertyReadingController`, который проверяет принадлежность счётчика объекту, затем в `PropertyReadingService`. Тот же сервис вызывает `MeterController` для API.
 
-Файлы панели пишет сам `ObjectPropertyFileController` на диск `public`, каталог `property-files/{propertyId}`. Фото из API пишет `ObjectPropertyFileService::storeForReading` и проставляет `property_reading_id`. У модели файла при `deleting` файл удаляется с диска.
+Файлы панели и фото из API пишет `ObjectPropertyFileService`: оба пути кладут файл в `property-files/{id счётчика}` на диске `public`. `store` создаёт вложение счётчика. `storeForReading` сначала удаляет прежние файлы этого показания и записывает новый с `property_reading_id`. У модели файла при `deleting` файл удаляется с диска. Ошибку записи панель показывает формой, API отдаёт исключение сервиса.
 
-Финансы: `ObjectFinanceController` создаёт и удаляет `object_finance_entries`, группирует по `year-month` уже в контроллере.
+Финансы: `ObjectFinanceController` вызывает `ObjectFinanceEntryService`. Сервис создаёт и удаляет `object_finance_entries` и группирует их по `year-month`.
 
 Экспорт: `ExportPeriodRequest` → `PropertyReadingsExportService` или `ObjectFinancesExportService` → `XlsxExporter`. Итоги считает `FinancePeriodTotalsService` (доход, расход, маржа).
 

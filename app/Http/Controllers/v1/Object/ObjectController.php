@@ -7,10 +7,9 @@ namespace App\Http\Controllers\v1\Object;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Object\UpdateObjectRequest;
 use App\Models\Object\ObjectModel;
-use App\Services\Object\ObjectFinanceSummaryService;
+use App\Models\User;
+use App\Services\Object\ObjectPageService;
 use App\Services\Object\ObjectService;
-use App\Services\Object\ReadingSubmissionStatusService;
-use App\Services\SubscribeUser\SubscribeUserService;
 use Auth;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -23,88 +22,44 @@ class ObjectController extends Controller
 {
     public function __construct(
         private readonly ObjectService $objectService,
-        private readonly ObjectFinanceSummaryService $financeSummaryService,
-        private readonly SubscribeUserService $subscribeUserService,
-        private readonly ReadingSubmissionStatusService $readingSubmissionStatusService,
-    ) {
-    }
+        private readonly ObjectPageService $objectPageService,
+    ) {}
 
-    /** Обзор объекта: счётчики и последние показания */
-    public function show(ObjectModel $object): Response
+    /**
+     * Список объектов текущего пользователя.
+     */
+    public function dashboard(): Response
     {
-        $object->load([
-            'subscribers',
-            'properties.latestReading',
-        ]);
+        $user = Auth::user();
+        if (! $user instanceof User) {
+            abort(401);
+        }
 
-        $financeSummaries = $this->financeSummaryService->summariesForObjects(collect([$object]));
-
-        return Inertia::render('object/show', [
-            'object' => [
-                'id' => $object->id,
-                'name' => $object->name,
-                'description' => $object->description,
-                'notification_date' => $object->notification_date,
-                'created_at' => $object->created_at,
-                'subscribers' => $object->subscribers,
-                'finance_summary' => $financeSummaries[$object->id] ?? [
-                    'total_income' => 0,
-                    'total_expense' => 0,
-                    'balance' => 0,
-                    'entries_count' => 0,
-                ],
-                'properties' => $object->properties->map(static fn ($property) => [
-                    'id' => $property->id,
-                    'name' => $property->name,
-                    'code' => $property->code,
-                    'description' => $property->description,
-                    'latest_reading' => $property->latestReading ? [
-                        'value' => $property->latestReading->value,
-                        'recorded_at' => $property->latestReading->recorded_at,
-                    ] : null,
-                ]),
-                'reading_status' => $this->readingSubmissionStatusService->forObject($object),
-            ],
-        ]);
-    }
-
-    /** Настройки объекта (подписчики, счётчики) */
-    public function edit(ObjectModel $object): Response
-    {
-        $this->subscribeUserService->backfillTelegramUsers($object->getKey());
-        $object->load(['subscribers.telegramUser', 'properties']);
-
-        return Inertia::render('object/edit', [
-            'object' => [
-                'id' => $object->id,
-                'name' => $object->name,
-                'description' => $object->description,
-                'notification_date' => $object->notification_date,
-                'subscribers' => $this->mapSubscribers($object),
-                'properties' => $object->properties,
-            ],
-            'allSubscribers' => $this->mapSubscribers($object),
-            'allProperties' => $object->properties,
+        return Inertia::render('dashboard', [
+            'objects' => $this->objectPageService->dashboardObjects($user),
         ]);
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * Обзор объекта: счётчики и последние показания.
      */
-    private function mapSubscribers(ObjectModel $object): array
+    public function show(ObjectModel $object): Response
     {
-        return $object->subscribers->map(static fn ($subscriber) => [
-            'id' => $subscriber->id,
-            'name' => $subscriber->name,
-            'registrationKey' => $subscriber->telegramUser?->registration_key,
-            'isRegistered' => $subscriber->telegramUser?->isRegistered() ?? false,
-            'telegramUsername' => $subscriber->telegramUser?->username,
-        ])->values()->all();
+        return Inertia::render('object/show', [
+            'object' => $this->objectPageService->show($object),
+        ]);
     }
 
-    /** Создание объекта
-     *
-     * @return RedirectResponse
+    /**
+     * Настройки объекта: подписчики и счётчики.
+     */
+    public function edit(ObjectModel $object): Response
+    {
+        return Inertia::render('object/edit', $this->objectPageService->edit($object));
+    }
+
+    /**
+     * Создание объекта.
      */
     public function create(): RedirectResponse
     {
@@ -115,14 +70,9 @@ class ObjectController extends Controller
             ->with('success', 'Объект успешно создан');
     }
 
-    /** Само редактирование
-     *
-     * @param UpdateObjectRequest $request
-     * @param ObjectModel $object
-     *
-     * @return RedirectResponse
+    /**
+     * Сохранение названия, описания и расписания напоминаний.
      */
-
     public function update(UpdateObjectRequest $request, ObjectModel $object): RedirectResponse
     {
         // $this->authorize('update', $object);
@@ -133,11 +83,8 @@ class ObjectController extends Controller
             ->with('success', 'Объект успешно обновлен');
     }
 
-    /** Удаление объекта
-     *
-     * @param ObjectModel $object
-     *
-     * @return RedirectResponse
+    /**
+     * Удаление объекта.
      */
     public function destroy(ObjectModel $object): RedirectResponse
     {

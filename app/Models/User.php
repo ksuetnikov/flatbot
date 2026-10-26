@@ -3,21 +3,34 @@
 namespace App\Models;
 
 use App\Models\Object\ObjectModel;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 
 /**
+ * Учётная запись веб-панели. Ролей нет.
+ *
  * @author Kirill Suetnikov
  *
- * @property-read Collection<ObjectModel> $objects Объекты пользлователя
+ * @property int $id Идентификатор пользователя
+ * @property string $name Имя
+ * @property string $email Почта, уникальная
+ * @property Carbon|null $email_verified_at Когда подтверждена почта. Модель не реализует MustVerifyEmail
+ * @property string $password Хеш пароля
+ * @property string|null $remember_token Токен «запомнить меня»
+ * @property Carbon|null $created_at Дата регистрации
+ * @property Carbon|null $updated_at Дата обновления профиля
+ * @property-read Collection<int, ObjectModel> $objects Объекты этого пользователя
  */
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory;
+
     use Notifiable;
 
     /**
@@ -55,7 +68,9 @@ class User extends Authenticatable
     }
 
     /**
-     * Объекты пользователя
+     * Объекты, которые создал этот пользователь.
+     *
+     * @return HasMany<ObjectModel, $this>
      */
     public function objects(): HasMany
     {

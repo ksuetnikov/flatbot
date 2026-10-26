@@ -7,11 +7,11 @@ namespace App\Http\Controllers\v1\Object;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Object\ExportPeriodRequest;
 use App\Http\Requests\Object\StoreObjectFinanceEntryRequest;
-use App\Models\Object\ObjectFinanceEntry;
 use App\Models\Object\ObjectModel;
 use App\Services\Export\ObjectFinancesExportService;
+use App\Services\Object\Data\FinanceObjectHeadingData;
+use App\Services\Object\ObjectFinanceEntryService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -20,8 +20,8 @@ class ObjectFinanceController extends Controller
 {
     public function __construct(
         private readonly ObjectFinancesExportService $objectFinancesExportService,
-    ) {
-    }
+        private readonly ObjectFinanceEntryService $objectFinanceEntryService,
+    ) {}
 
     public function export(ExportPeriodRequest $request, ObjectModel $object): StreamedResponse
     {
@@ -30,101 +30,43 @@ class ObjectFinanceController extends Controller
 
     public function show(ObjectModel $object): Response
     {
-        $entries = $object->financeEntries()
-            ->orderByDesc('year')
-            ->orderByDesc('month')
-            ->orderByDesc('day')
-            ->orderBy('type')
-            ->orderBy('id')
-            ->get();
-
         return Inertia::render('object/finances', [
-            'object' => [
-                'id' => $object->id,
-                'name' => $object->name,
-            ],
-            'months' => $this->groupEntriesByMonth($entries),
+            'object' => new FinanceObjectHeadingData($object->id, $object->name),
+            'months' => $this->objectFinanceEntryService->months($object),
         ]);
     }
 
     public function store(StoreObjectFinanceEntryRequest $request, ObjectModel $object): RedirectResponse
     {
         $validated = $request->validated();
+        $comment = $validated['comment'] ?? null;
 
-        $object->financeEntries()->create([
-            'year' => (int) $validated['year'],
-            'month' => (int) $validated['month'],
-            'day' => (int) $validated['day'],
-            'type' => $validated['type'],
-            'amount' => $validated['amount'],
-            'comment' => $validated['comment'] ?? null,
-        ]);
+        $this->objectFinanceEntryService->create(
+            object: $object,
+            year: (int) $validated['year'],
+            month: (int) $validated['month'],
+            day: (int) $validated['day'],
+            type: (string) $validated['type'],
+            amount: $this->amount($validated['amount']),
+            comment: is_string($comment) ? $comment : null,
+        );
 
         return redirect()->back()->with('success', 'Запись добавлена');
     }
 
     public function destroy(ObjectModel $object, int $entryId): RedirectResponse
     {
-        $entry = ObjectFinanceEntry::query()
-            ->where('object_id', $object->getKey())
-            ->findOrFail($entryId);
-
-        $entry->delete();
+        $this->objectFinanceEntryService->delete($object, $entryId);
 
         return redirect()->back()->with('success', 'Запись удалена');
     }
 
-    /**
-     * @param Collection<int, ObjectFinanceEntry> $entries
-     *
-     * @return list<array<string, mixed>>
-     */
-    private function groupEntriesByMonth(Collection $entries): array
+    private function amount(mixed $amount): string|int|float
     {
-        $grouped = [];
-
-        foreach ($entries as $entry) {
-            $key = $entry->year.'-'.$entry->month;
-
-            if (! isset($grouped[$key])) {
-                $grouped[$key] = [
-                    'year' => $entry->year,
-                    'month' => $entry->month,
-                    'incomes' => [],
-                    'expenses' => [],
-                ];
-            }
-
-            $item = [
-                'id' => $entry->id,
-                'day' => $entry->day,
-                'amount' => (string) $entry->amount,
-                'comment' => $entry->comment,
-            ];
-
-            if ($entry->type === ObjectFinanceEntry::TYPE_INCOME) {
-                $grouped[$key]['incomes'][] = $item;
-            } else {
-                $grouped[$key]['expenses'][] = $item;
-            }
+        if (is_string($amount) || is_int($amount) || is_float($amount)) {
+            return $amount;
         }
 
-        return array_values(array_map(static function (array $month): array {
-            $totalIncome = array_sum(array_map(
-                static fn (array $row): float => (float) $row['amount'],
-                $month['incomes'],
-            ));
-            $totalExpense = array_sum(array_map(
-                static fn (array $row): float => (float) $row['amount'],
-                $month['expenses'],
-            ));
-
-            return [
-                ...$month,
-                'total_income' => $totalIncome,
-                'total_expense' => $totalExpense,
-                'balance' => $totalIncome - $totalExpense,
-            ];
-        }, $grouped));
+        return (string) $amount;
     }
 }
