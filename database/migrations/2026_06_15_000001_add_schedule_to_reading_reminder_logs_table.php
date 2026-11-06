@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('reading_reminder_logs', function (Blueprint $table) {
+            $table->dropForeign('reading_reminder_logs_object_id_foreign');
             $table->dropUnique('reading_reminder_logs_unique');
         });
 
@@ -35,21 +36,42 @@ return new class extends Migration
                 ],
                 'reading_reminder_logs_unique'
             );
+
+            $table->foreign('object_id')
+                ->references('id')
+                ->on('objects')
+                ->onDelete('cascade');
         });
     }
 
     public function down(): void
     {
         Schema::table('reading_reminder_logs', function (Blueprint $table) {
+            $table->dropForeign('reading_reminder_logs_object_id_foreign');
             $table->dropUnique('reading_reminder_logs_unique');
-            $table->dropColumn(['schedule_day', 'schedule_hour', 'schedule_minute']);
+            $table->dropColumn([
+                'schedule_day',
+                'schedule_hour',
+                'schedule_minute',
+            ]);
         });
 
         Schema::table('reading_reminder_logs', function (Blueprint $table) {
             $table->unique(
-                ['object_id', 'subscribe_user_id', 'period_year', 'period_month', 'reminder_type'],
+                [
+                    'object_id',
+                    'subscribe_user_id',
+                    'period_year',
+                    'period_month',
+                    'reminder_type',
+                ],
                 'reading_reminder_logs_unique'
             );
+
+            $table->foreign('object_id')
+                ->references('id')
+                ->on('objects')
+                ->onDelete('cascade');
         });
     }
 };
