@@ -18,6 +18,10 @@ Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');
 
+Route::get('/invation', function () {
+    return response()->file(public_path('invation/index.html'));
+})->name('invation');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [ObjectController::class, 'dashboard'])->name('dashboard');
 
